@@ -1,0 +1,20 @@
+[package]
+name = "dytp-gateway"
+version = "0.1.0"
+authors = ["taicsuzu <taichiro0709@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+dytp-component = { path = "../dytp-component" }
+dytp-connection = { path = "../dytp-connection" }
+dytp-future = { path = "../dytp-future" }
+dytp-protocol = { path = "../dytp-protocol" }
+tokio = "*"
+bytes = "*"
+futures = "*"
+failure = "*"
+env_logger = "*"
+log = "*"
+lazy_static = "*"
+openssl = "*"
+rand = "*"

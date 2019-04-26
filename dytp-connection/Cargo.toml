@@ -1,0 +1,17 @@
+[package]
+name = "dytp-connection"
+version = "0.1.0"
+authors = ["taicsuzu <taichiro0709@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+dytp-protocol = { path = "../dytp-protocol" }
+tokio = "*"
+bytes = "*"
+futures = "*"
+failure = "*"
+env_logger = "*"
+log = "*"
+httparse = "*"
+http = "*"
+trust-dns-resolver = "*"

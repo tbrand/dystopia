@@ -1,0 +1,10 @@
+[package]
+name = "dytp-component"
+version = "0.1.0"
+authors = ["taicsuzu <taichiro0709@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+failure = "*"
+regex = "*"
+semver = "*"
