@@ -34,14 +34,9 @@ fn ip(req: &httparse::Request, port: u16) -> Result<IpAddr> {
     let host = uri.host().unwrap();
 
     match (host, port).to_socket_addrs().map(|iter| {
-        iter.map(|socket_address| {
-            // TODO: remove
-            log::debug!("socket_address={:?}", socket_address);
-
-            socket_address.ip()
-        })
-        .filter(|ip_addr| ip_addr.is_ipv4())
-        .collect::<Vec<IpAddr>>()
+        iter.map(|socket_address| socket_address.ip())
+            .filter(|ip_addr| ip_addr.is_ipv4())
+            .collect::<Vec<IpAddr>>()
     }) {
         Ok(mut ip) => {
             if ip.len() == 0 {
