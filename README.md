@@ -16,11 +16,14 @@ curl -v https://google.com -x <TODO: public gateway> -L
 
 <i>Dystopia is on super super super early stage. Any feedbacks or contributions are very welcome!</i>
 
-## Performance evaluation
+## Performance Evaluation
 
 Dystopia is optimized for onion routing powered by **Rust** and its **Future**.
 
-TODO: Add results
+<img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSKMbPx46YnegQtjNeiAarWeyUAvpwGzD17B2VVJi_1AjkA6B2I2KA_AR1_VwfisDSecxRXr_xn33ox/pubchart?oid=550137453&format=image" width="600px"/>
+
+<i>Dystopia's results doesn't contain any latencies since their nodes and gateway are running on the same machine.</i>
+The results are shared at [here](https://docs.google.com/spreadsheets/d/19edUa183IsHmPJ6hyPged2HL69GfBigqVEKNoSWn-8Q/edit?usp=sharing).
 
 ## Components
 
