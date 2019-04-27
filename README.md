@@ -16,6 +16,10 @@ curl -v https://google.com -x <TODO: public gateway> -L
 
 <i>Dystopia is on super super super early stage. Any feedbacks or contributions are very welcome!</i>
 
+## How does Dystopia work?
+
+![Dystopa's Architecture](https://user-images.githubusercontent.com/3483230/56845221-c652bd00-68f8-11e9-8d0d-c06df6a723b3.png)
+
 ## Performance Evaluation
 
 Dystopia is optimized for onion routing powered by **Rust** and its **Future**.
