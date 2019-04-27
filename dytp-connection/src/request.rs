@@ -40,6 +40,7 @@ fn ip(req: &httparse::Request, port: u16) -> Result<IpAddr> {
 
             socket_address.ip()
         })
+        .filter(|ip_addr| ip_addr.is_ipv4())
         .collect::<Vec<IpAddr>>()
     }) {
         Ok(mut ip) => {
@@ -108,8 +109,13 @@ pub fn parse(buf: &[u8]) -> Result<Option<RequestContext>> {
     }
 
     let port = port(&req)?;
+    log::debug!("port={:?}", port);
+
     let ip = ip(&req, port)?;
+    log::debug!("ip={:?}", ip);
+
     let tls = tls(&req);
+    log::debug!("tls={:?}", tls);
 
     let request = RequestContext {
         tls,
