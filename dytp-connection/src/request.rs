@@ -7,11 +7,10 @@ use futures::prelude::*;
 use futures::try_ready;
 use http::uri::Uri;
 use std::io::Write;
+use std::net::ToSocketAddrs;
 use std::net::{IpAddr, SocketAddr};
 use tokio::net::TcpStream;
 use tokio::prelude::*;
-use trust_dns_resolver::config::*;
-use trust_dns_resolver::AsyncResolver;
 
 #[derive(Debug)]
 pub struct RequestContext {
@@ -21,8 +20,6 @@ pub struct RequestContext {
 }
 
 fn ip(req: &httparse::Request) -> Result<IpAddr> {
-    use tokio::executor::Executor;
-
     if req.path.is_none() {
         return Err(RequestError::PathNotFound.into());
     }
@@ -35,31 +32,12 @@ fn ip(req: &httparse::Request) -> Result<IpAddr> {
     }
 
     let host = uri.host().unwrap();
-    let mut exec = tokio::executor::DefaultExecutor::current();
 
-    let (tx, rx) = futures::sync::oneshot::channel();
+    let ip: Vec<IpAddr> = (host, 0)
+        .to_socket_addrs()
+        .map(|iter| iter.map(|socket_address| socket_address.ip()).collect())?;
 
-    let (resolver, background) =
-        AsyncResolver::new(ResolverConfig::default(), ResolverOpts::default());
-
-    exec.spawn(Box::new(background))?;
-
-    let lookup = resolver
-        .lookup_ip(host)
-        .then(move |r| tx.send(r).map_err(|_| unreachable!()));
-
-    exec.spawn(Box::new(lookup))?;
-
-    let res = rx.wait().unwrap().unwrap();
-
-    if let Some(ip) = res.iter().next() {
-        Ok(ip)
-    } else {
-        Err(RequestError::LookupFailure {
-            host: host.to_owned(),
-        }
-        .into())
-    }
+    Ok(ip[0])
 }
 
 fn port(req: &httparse::Request) -> Result<u16> {
