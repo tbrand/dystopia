@@ -19,7 +19,7 @@ pub struct RequestContext {
     pub ip: SocketAddr,
 }
 
-fn ip(req: &httparse::Request) -> Result<IpAddr> {
+fn ip(req: &httparse::Request, port: u16) -> Result<IpAddr> {
     if req.path.is_none() {
         return Err(RequestError::PathNotFound.into());
     }
@@ -33,17 +33,29 @@ fn ip(req: &httparse::Request) -> Result<IpAddr> {
 
     let host = uri.host().unwrap();
 
-    let mut ip: Vec<IpAddr> = (host, 0)
-        .to_socket_addrs()
-        .map(|iter| iter.map(|socket_address| socket_address.ip()).collect())?;
+    match (host, port).to_socket_addrs().map(|iter| {
+        iter.map(|socket_address| {
+            // TODO: remove
+            log::debug!("socket_address={:?}", socket_address);
 
-    if ip.len() == 0 {
-        return Err(RequestError::LookupFailure {
-            host: host.to_owned(),
+            socket_address.ip()
+        })
+        .collect::<Vec<IpAddr>>()
+    }) {
+        Ok(mut ip) => {
+            if ip.len() == 0 {
+                return Err(RequestError::LookupFailure {
+                    host: host.to_owned(),
+                }
+                .into());
+            } else {
+                return Ok(ip.pop().unwrap());
+            }
         }
-        .into());
-    } else {
-        return Ok(ip.pop().unwrap());
+        Err(e) => {
+            log::error!("ip lookup failure due to error={:?}", e);
+            Err(e.into())
+        }
     }
 }
 
@@ -95,8 +107,8 @@ pub fn parse(buf: &[u8]) -> Result<Option<RequestContext>> {
         return Ok(None);
     }
 
-    let ip = ip(&req)?;
     let port = port(&req)?;
+    let ip = ip(&req, port)?;
     let tls = tls(&req);
 
     let request = RequestContext {
