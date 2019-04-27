@@ -223,16 +223,11 @@ impl Stream for Request {
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         match try_ready!(self.try_read()) {
             Some(payload) => {
-                log::debug!("read {} bytes", payload.len());
-
                 self.http_buf.extend_from_slice(&payload);
                 self.http_buf.extend_from_slice(b"\r\n");
 
                 if let Some(context) = parse(&self.http_buf)? {
-                    log::debug!("context found");
                     return Ok(Async::Ready(Some(context)));
-                } else {
-                    log::debug!("context not found");
                 }
             }
             None => return Ok(Async::Ready(None)),

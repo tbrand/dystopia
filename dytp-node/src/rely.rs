@@ -49,6 +49,7 @@ impl Rely {
             } else {
                 upstream.set_read_delim(Delim::Http);
                 upstream.set_write_delim(Delim::Http);
+                upstream.parse_http = true;
             }
         } else {
             upstream.set_read_delim(Delim::Dytp);
