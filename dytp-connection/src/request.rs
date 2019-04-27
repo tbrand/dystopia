@@ -33,11 +33,18 @@ fn ip(req: &httparse::Request) -> Result<IpAddr> {
 
     let host = uri.host().unwrap();
 
-    let ip: Vec<IpAddr> = (host, 0)
+    let mut ip: Vec<IpAddr> = (host, 0)
         .to_socket_addrs()
         .map(|iter| iter.map(|socket_address| socket_address.ip()).collect())?;
 
-    Ok(ip[0])
+    if ip.len() == 0 {
+        return Err(RequestError::LookupFailure {
+            host: host.to_owned(),
+        }
+        .into());
+    } else {
+        return Ok(ip.pop().unwrap());
+    }
 }
 
 fn port(req: &httparse::Request) -> Result<u16> {
@@ -201,16 +208,12 @@ impl Stream for Request {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        log::debug!("poll() --- Request");
-
         match try_ready!(self.try_read()) {
             Some(payload) => {
                 log::debug!("read {} bytes", payload.len());
 
                 self.http_buf.extend_from_slice(&payload);
                 self.http_buf.extend_from_slice(b"\r\n");
-
-                log::debug!("{:?}", self.http_buf);
 
                 if let Some(context) = parse(&self.http_buf)? {
                     log::debug!("context found");
