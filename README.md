@@ -11,7 +11,7 @@ It implements onion routing with original protocols inspired by [Tor](https://ww
 You can quickly enter the anonymous internet by the below.
 
 ```bash
-curl -v https://google.com -x <TODO: public gateway> -L
+curl https://google.com -x 54.95.171.65:2888 -L
 ```
 
 The curl execution through our public Dystopia's nodes. Nobody knows the exact route except the public gateway.
