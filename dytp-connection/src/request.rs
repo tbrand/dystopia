@@ -227,19 +227,24 @@ impl Stream for Request {
 
         match try_ready!(self.try_read()) {
             Some(payload) => {
+                log::debug!("read {} bytes", payload.len());
+
                 self.http_buf.extend_from_slice(&payload);
                 self.http_buf.extend_from_slice(b"\r\n");
 
                 if let Some(context) = parse(&self.http_buf)? {
+                    log::debug!("context: {:?}", context);
                     return Ok(Async::Ready(Some(context)));
+                } else {
+                    log::debug!("context not found");
                 }
-
-                task::current().notify();
-
-                Ok(Async::NotReady)
             }
-            None => Ok(Async::Ready(None)),
+            None => return Ok(Async::Ready(None)),
         }
+
+        task::current().notify();
+
+        Ok(Async::NotReady)
     }
 }
 
