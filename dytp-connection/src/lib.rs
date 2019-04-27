@@ -1,3 +1,5 @@
+#![recursion_limit = "128"]
+
 pub mod error;
 pub mod origin;
 pub mod request;
