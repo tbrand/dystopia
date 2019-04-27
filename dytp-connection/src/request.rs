@@ -232,8 +232,10 @@ impl Stream for Request {
                 self.http_buf.extend_from_slice(&payload);
                 self.http_buf.extend_from_slice(b"\r\n");
 
+                log::debug!("{:?}", self.http_buf);
+
                 if let Some(context) = parse(&self.http_buf)? {
-                    log::debug!("context: {:?}", context);
+                    log::debug!("context found");
                     return Ok(Async::Ready(Some(context)));
                 } else {
                     log::debug!("context not found");

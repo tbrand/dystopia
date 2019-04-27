@@ -102,7 +102,7 @@ impl Stream for Origin {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        log::debug!("poll() --- Origin");
+        // log::debug!("poll() --- Origin");
 
         self.try_read()
     }
