@@ -114,6 +114,8 @@ impl Future for Upstream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- Upstream");
+
         self.try_read()
     }
 }

@@ -21,6 +21,8 @@ impl Future for LatestTs {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- LatestTs");
+
         if let Ok(latest_ts) = LATEST_TS.read() {
             return Ok(Async::Ready(*latest_ts));
         }
@@ -46,6 +48,8 @@ impl Future for RecordTs {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- RecordTs");
+
         if let Ok(mut latest_ts) = LATEST_TS.write() {
             *latest_ts = self.ts;
 

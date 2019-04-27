@@ -31,6 +31,8 @@ impl Future for SyncAudit {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- SyncAudit");
+
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
                 if payload.len() == 0 {

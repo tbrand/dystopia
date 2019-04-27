@@ -30,6 +30,8 @@ fn ignore() -> ProcessFuture {
 }
 
 fn process(socket: TcpStream, hops: usize) {
+    log::debug!("received new request");
+
     let request = Request::new(socket);
     let process = request
         .into_future()
@@ -37,6 +39,8 @@ fn process(socket: TcpStream, hops: usize) {
         .and_then(move |(ctx, req)| {
             if let Some(ctx) = ctx {
                 let route = GetRoute::new(hops);
+
+                log::debug!("decided the route.");
 
                 let f = route.and_then(move |nodes| {
                     if let Some(nodes) = nodes {
@@ -58,6 +62,8 @@ fn process(socket: TcpStream, hops: usize) {
                             if rsa_keys.iter().any(|r| r.is_none()) {
                                 return ignore();
                             }
+
+                            log::debug!("received public keys.");
 
                             let route_nodes: Vec<RouteNode> = rsa_keys
                                 .into_iter()
@@ -106,6 +112,8 @@ fn sync(cloud_addr: SocketAddr) {
     let f = GetAllNodes::new()
         .and_then(move |nodes| {
             let f = if nodes.len() == 0 {
+                log::debug!("Fetch nodes from cloud...");
+
                 let f = match FetchNodes::new(cloud_addr) {
                     Ok(f) => {
                         let f = f.and_then(|res| {
@@ -131,6 +139,8 @@ fn sync(cloud_addr: SocketAddr) {
 
                 Either::A(f)
             } else {
+                log::debug!("Sync audit log...");
+
                 let f = LatestTs::new().and_then(move |ts| match SyncAudit::new(cloud_addr, ts) {
                     Ok(f) => {
                         let f = f.and_then(|res| {
@@ -143,11 +153,11 @@ fn sync(cloud_addr: SocketAddr) {
                                     for a in audit.into_iter().rev() {
                                         f = Box::new(f.and_then(move |_| match a.state {
                                             NodeState::ACTIVE => {
-                                                log::info!("{} <= ACTIVE", a.addr);
+                                                log::info!("ACTIVE: {} ({})", a.addr, a.version);
                                                 Either::A(RegisterNode::new(a))
                                             }
                                             NodeState::PENDING_DELETE => {
-                                                log::info!("{} <= PENDING_DELETE", a.addr);
+                                                log::info!("DELETE: {} ({})", a.addr, a.version);
                                                 Either::B(RemoveNode::new(a.addr))
                                             }
                                         }));

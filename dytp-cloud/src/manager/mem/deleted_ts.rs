@@ -21,6 +21,8 @@ impl Future for DeletedTs {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- DeletedTs");
+
         if let Ok(audit) = ON_MEM_AUDIT.try_read() {
             for a in audit.iter().rev() {
                 if a.addr == self.addr {

@@ -29,6 +29,8 @@ impl Future for FetchNodes {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- FetchNodes");
+
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
                 let ts_nodes: Vec<String> = std::str::from_utf8(&payload)

@@ -19,6 +19,8 @@ impl Future for Sync {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- Sync");
+
         if let Ok(audit) = ON_MEM_AUDIT.try_read() {
             let mut audit_res = Vec::new();
 

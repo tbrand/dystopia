@@ -124,6 +124,8 @@ impl Future for Rely {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- Rely");
+
         let mut notified: bool = false;
 
         match self.origin.poll() {

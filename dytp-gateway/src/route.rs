@@ -28,6 +28,8 @@ impl Future for GetRoute {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- GetRoute");
+
         if let Ok(nodes) = NODES.try_read() {
             if nodes.len() < self.hops {
                 log::warn!("gateway doesn't know enough nodes for hops={}", self.hops);
@@ -66,6 +68,8 @@ impl Future for GetAllNodes {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- GetAllNodes");
+
         if let Ok(nodes) = NODES.try_read() {
             return Ok(Async::Ready(nodes.clone()));
         }
@@ -92,11 +96,13 @@ impl Future for RegisterNodes {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- RegisterNodes");
+
         if let Ok(mut ns) = NODES.try_write() {
             ns.clear();
 
             self.nodes.iter().for_each(|node| {
-                log::info!("<-- add {}({})", node.addr, node.version);
+                log::info!("ADD: {} ({})", node.addr, node.version);
                 ns.push(node.clone());
             });
 
@@ -125,6 +131,8 @@ impl Future for RegisterNode {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- RegisterNode");
+
         if let Ok(mut ns) = NODES.try_write() {
             if None == ns.iter().find(|n| n.addr == self.audit.addr) {
                 ns.push(self.audit.clone().into());
@@ -155,6 +163,8 @@ impl Future for RemoveNode {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- RemoveNode");
+
         if let Ok(mut ns) = NODES.try_write() {
             if let Some(idx) = ns
                 .iter()

@@ -33,6 +33,8 @@ impl Future for GetNodeHealth {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- GetNodeHealth");
+
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
                 let health = HealthResp::from(&payload as &[u8]);

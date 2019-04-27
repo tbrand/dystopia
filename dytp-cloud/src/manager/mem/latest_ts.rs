@@ -16,6 +16,8 @@ impl Future for LatestTs {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- LatestTs");
+
         if let Ok(audit) = ON_MEM_AUDIT.try_read() {
             let ts = if audit.len() > 0 {
                 audit[audit.len() - 1].ts

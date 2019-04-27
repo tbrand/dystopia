@@ -223,6 +223,8 @@ impl Stream for Request {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
+        log::debug!("poll() --- Request");
+
         match try_ready!(self.try_read()) {
             Some(payload) => {
                 self.http_buf.extend_from_slice(&payload);

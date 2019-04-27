@@ -20,6 +20,8 @@ impl Future for Health {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        log::debug!("poll() --- Health");
+
         let res: Vec<u8> = HealthResp::new(crate_version!()).into();
 
         self.origin.write(&res)?;
