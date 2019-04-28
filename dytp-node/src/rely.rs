@@ -49,6 +49,7 @@ impl Rely {
             } else {
                 upstream.set_read_delim(Delim::Http);
                 upstream.set_write_delim(Delim::Http);
+                upstream.parse_http = true;
             }
         } else {
             upstream.set_read_delim(Delim::Dytp);
@@ -124,8 +125,6 @@ impl Future for Rely {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- Rely");
-
         let mut notified: bool = false;
 
         match self.origin.poll() {

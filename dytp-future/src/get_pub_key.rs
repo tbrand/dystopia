@@ -29,8 +29,6 @@ impl Future for GetPubKey {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- GetPubKey");
-
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
                 return Ok(Async::Ready(

@@ -21,8 +21,6 @@ impl Future for PubKey {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- PubKey");
-
         if let Ok(state) = self.state.try_read() {
             let pub_key = state.rsa.public_key_to_der().unwrap();
 

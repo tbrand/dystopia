@@ -25,8 +25,6 @@ impl Future for PendingDelete {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- PendingDelete");
-
         if let Ok(mut nodes) = ON_MEM_NODES.try_write() {
             if let Ok(mut audit) = ON_MEM_AUDIT.try_write() {
                 if let Some(idx) = nodes

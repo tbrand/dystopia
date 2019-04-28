@@ -42,8 +42,6 @@ impl Future for Join {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- Join");
-
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
                 let state = self.state.read().unwrap();

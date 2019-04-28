@@ -20,8 +20,6 @@ impl Future for List {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- List");
-
         if let Ok(nodes) = ON_MEM_NODES.try_read() {
             let nodes = if self.active_only {
                 nodes

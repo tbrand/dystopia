@@ -7,11 +7,10 @@ use futures::prelude::*;
 use futures::try_ready;
 use http::uri::Uri;
 use std::io::Write;
+use std::net::ToSocketAddrs;
 use std::net::{IpAddr, SocketAddr};
 use tokio::net::TcpStream;
 use tokio::prelude::*;
-use trust_dns_resolver::config::*;
-use trust_dns_resolver::AsyncResolver;
 
 #[derive(Debug)]
 pub struct RequestContext {
@@ -20,9 +19,7 @@ pub struct RequestContext {
     pub ip: SocketAddr,
 }
 
-fn ip(req: &httparse::Request) -> Result<IpAddr> {
-    use tokio::executor::Executor;
-
+fn ip(req: &httparse::Request, port: u16) -> Result<IpAddr> {
     if req.path.is_none() {
         return Err(RequestError::PathNotFound.into());
     }
@@ -35,30 +32,26 @@ fn ip(req: &httparse::Request) -> Result<IpAddr> {
     }
 
     let host = uri.host().unwrap();
-    let mut exec = tokio::executor::DefaultExecutor::current();
 
-    let (tx, rx) = futures::sync::oneshot::channel();
-
-    let (resolver, background) =
-        AsyncResolver::new(ResolverConfig::default(), ResolverOpts::default());
-
-    exec.spawn(Box::new(background))?;
-
-    let lookup = resolver
-        .lookup_ip(host)
-        .then(move |r| tx.send(r).map_err(|_| unreachable!()));
-
-    exec.spawn(Box::new(lookup))?;
-
-    let res = rx.wait().unwrap().unwrap();
-
-    if let Some(ip) = res.iter().next() {
-        Ok(ip)
-    } else {
-        Err(RequestError::LookupFailure {
-            host: host.to_owned(),
+    match (host, port).to_socket_addrs().map(|iter| {
+        iter.map(|socket_address| socket_address.ip())
+            .filter(|ip_addr| ip_addr.is_ipv4())
+            .collect::<Vec<IpAddr>>()
+    }) {
+        Ok(mut ip) => {
+            if ip.len() == 0 {
+                return Err(RequestError::LookupFailure {
+                    host: host.to_owned(),
+                }
+                .into());
+            } else {
+                return Ok(ip.pop().unwrap());
+            }
         }
-        .into())
+        Err(e) => {
+            log::error!("ip lookup failure due to error={:?}", e);
+            Err(e.into())
+        }
     }
 }
 
@@ -110,9 +103,14 @@ pub fn parse(buf: &[u8]) -> Result<Option<RequestContext>> {
         return Ok(None);
     }
 
-    let ip = ip(&req)?;
     let port = port(&req)?;
+    log::debug!("port={:?}", port);
+
+    let ip = ip(&req, port)?;
+    log::debug!("ip={:?}", ip);
+
     let tls = tls(&req);
+    log::debug!("tls={:?}", tls);
 
     let request = RequestContext {
         tls,
@@ -223,8 +221,6 @@ impl Stream for Request {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        log::debug!("poll() --- Request");
-
         match try_ready!(self.try_read()) {
             Some(payload) => {
                 self.http_buf.extend_from_slice(&payload);
@@ -233,13 +229,13 @@ impl Stream for Request {
                 if let Some(context) = parse(&self.http_buf)? {
                     return Ok(Async::Ready(Some(context)));
                 }
-
-                task::current().notify();
-
-                Ok(Async::NotReady)
             }
-            None => Ok(Async::Ready(None)),
+            None => return Ok(Async::Ready(None)),
         }
+
+        task::current().notify();
+
+        Ok(Async::NotReady)
     }
 }
 

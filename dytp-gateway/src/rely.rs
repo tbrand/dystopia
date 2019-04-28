@@ -44,6 +44,8 @@ impl Rely {
 
         rely.handshake(http_buf)?;
 
+        log::debug!("handshake done!");
+
         Ok(rely)
     }
 
@@ -70,6 +72,9 @@ impl Rely {
             self.origin.flush()?;
             self.origin.set_write_delim(Delim::None);
         } else {
+            // Remove last http delimiter(\r\n)
+            let http_buf = &http_buf[0..http_buf.len() - 2];
+
             self.rely(http_buf)?;
         }
 
@@ -105,8 +110,6 @@ impl Future for Rely {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        log::debug!("poll() --- Rely");
-
         let mut notified: bool = false;
 
         match self.origin.poll() {
