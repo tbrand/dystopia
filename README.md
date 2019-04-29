@@ -3,6 +3,24 @@
 </h1>
 
 <p align="center">
+  <a href="https://travis-ci.com/tbrand/dystopia">
+    <img src="https://travis-ci.com/tbrand/dystopia.svg?branch=master"/>
+  </a>
+
+  <a href="https://ci.appveyor.com/project/tbrand/dystopia">
+    <img src="https://ci.appveyor.com/api/projects/status/3t3l8xm9lyjddl8k?svg=true"/>
+  </a>
+
+  <a href="https://hub.docker.com/r/tbrand/dystopia">
+    <img src="https://img.shields.io/docker/cloud/build/tbrand/dystopia.svg"/>
+  </a>
+
+  <a href="https://github.com/tbrand/dystopia/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/tbrand/dystopia.svg"/>
+  </a>
+</p>
+
+<p align="center">
   <i>Real Anonymity on the Internet</i>
 </p>
 
