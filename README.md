@@ -24,6 +24,7 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 - [How does Dystopia work?](https://github.com/tbrand/dystopia/wiki/How-does-Dystopia-work%3F)
 - [Performance Evaluation](https://github.com/tbrand/dystopia/wiki/Performance-Evaluation)
 - [Build and Install](https://github.com/tbrand/dystopia/wiki/Build-and-Install)
+- [Use docker image](https://github.com/tbrand/dystopia/wiki/Use-docker-image)
 - [Component: Gateway](https://github.com/tbrand/dystopia/wiki/Component:-Gateway)
 - [Component: Node](https://github.com/tbrand/dystopia/wiki/Component:-Node)
 - [Component: Cloud](https://github.com/tbrand/dystopia/wiki/Component:-Cloud)
