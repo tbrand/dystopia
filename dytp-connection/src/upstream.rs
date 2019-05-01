@@ -2,6 +2,7 @@ use crate::Connection;
 use bytes::BytesMut;
 use dytp_protocol::delim::Delim;
 use failure::Error;
+use futures::try_ready;
 use std::io::Write;
 use std::net::TcpStream;
 use std::net::ToSocketAddrs;
@@ -25,37 +26,37 @@ impl Upstream {
         let mut headers = [httparse::EMPTY_HEADER; 32];
         let mut req = httparse::Response::new(&mut headers);
 
-        let res = req.parse(&self.rb)?;
+        match req.parse(&self.rb)? {
+            httparse::Status::Complete(body_start) => {
+                for header in headers.iter() {
+                    if header.name == "Content-Length" {
+                        let len: usize = std::str::from_utf8(header.value)?.parse()?;
+                        log::debug!("content length={}", len);
 
-        if res.is_partial() {
-            return Ok(Async::NotReady);
-        }
+                        if self.rb.len() - body_start == len {
+                            if !self.rb.ends_with(b"\r\n") {
+                                // It doesn't end with http delimiter.
+                                // Change the mode from Delim::Http to Delim::None
+                                log::debug!("changed delimiter mode: Http => None");
 
-        for header in headers.iter() {
-            if header.name == "Content-Length" {
-                let len: usize = std::str::from_utf8(header.value)?.parse()?;
+                                self.read_delim = Delim::None;
+                            }
 
-                if let Some(start_body) = self
-                    .rb
-                    .windows(4)
-                    .enumerate()
-                    .find(|&(_, bytes)| bytes == b"\r\n\r\n")
-                    .map(|(i, _)| i)
-                {
-                    if self.rb.len() - start_body - 4 == len {
-                        if !self.rb.ends_with(b"\r\n") {
-                            // It doesn't end with http delimiter.
-                            // Change the mode from Delim::Http to Delim::None
-                            self.read_delim = Delim::None;
+                            return Ok(Async::Ready(()));
+                        } else {
+                            return Ok(Async::NotReady);
                         }
-
-                        return Ok(Async::Ready(()));
                     }
                 }
             }
+            httparse::Status::Partial => {
+                return Ok(Async::NotReady);
+            }
         }
 
-        Ok(Async::NotReady)
+        log::debug!("content-length header not found");
+
+        Ok(Async::Ready(()))
     }
 }
 
@@ -100,16 +101,6 @@ impl Connection for Upstream {
                 Ok(n) => {
                     if n > 0 {
                         self.rb.extend_from_slice(&b[0..n]);
-
-                        if self.parse_http {
-                            match self.parse_http() {
-                                Ok(Async::Ready(())) => {
-                                    return Ok(Async::Ready(()));
-                                }
-                                Err(e) => return Err(e.into()),
-                                _ => {}
-                            }
-                        }
                     } else {
                         return Ok(Async::Ready(()));
                     }
@@ -165,6 +156,26 @@ impl Future for Upstream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.try_read()
+        let disconnected = self.fill()?.is_ready();
+
+        if !self.rb.is_empty() && self.parse_http {
+            try_ready!(self.parse_http());
+
+            self.parse_http = false;
+        }
+
+        if !self.rb.is_empty() {
+            if let Some(payload) = self.try_read_delim() {
+                return Ok(Async::Ready(Some(payload)));
+            }
+        }
+
+        if disconnected {
+            Ok(Async::Ready(None))
+        } else {
+            task::current().notify();
+
+            Ok(Async::NotReady)
+        }
     }
 }

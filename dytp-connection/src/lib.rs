@@ -69,30 +69,7 @@ pub trait Connection {
         let disconnected = self.fill()?.is_ready();
 
         if !self.rb().is_empty() {
-            if let Some(payload) = match self.read_delim() {
-                Delim::Dytp => {
-                    if let Some(p) = protocol::parse(self.rb_mut()) {
-                        return Ok(Async::Ready(Some((p.1).0)));
-                    } else {
-                        return Ok(Async::NotReady);
-                    }
-                }
-                Delim::Http => self
-                    .rb()
-                    .windows(2)
-                    .enumerate()
-                    .find(|&(_, bytes)| bytes == b"\r\n")
-                    .map(|(i, _)| i)
-                    .map(|i| {
-                        let mut p = self.rb_mut().split_to(i + 2);
-                        p.split_off(i);
-                        p
-                    }),
-                Delim::None => {
-                    let len = self.rb().len();
-                    Some(self.rb_mut().split_to(len))
-                }
-            } {
+            if let Some(payload) = self.try_read_delim() {
                 return Ok(Async::Ready(Some(payload)));
             }
         }
@@ -103,6 +80,33 @@ pub trait Connection {
             task::current().notify();
 
             Ok(Async::NotReady)
+        }
+    }
+
+    fn try_read_delim(&mut self) -> Option<BytesMut> {
+        match self.read_delim() {
+            Delim::Dytp => {
+                if let Some(p) = protocol::parse(self.rb_mut()) {
+                    Some((p.1).0)
+                } else {
+                    None
+                }
+            }
+            Delim::Http => self
+                .rb()
+                .windows(2)
+                .enumerate()
+                .find(|&(_, bytes)| bytes == b"\r\n")
+                .map(|(i, _)| i)
+                .map(|i| {
+                    let mut p = self.rb_mut().split_to(i + 2);
+                    p.split_off(i);
+                    p
+                }),
+            Delim::None => {
+                let len = self.rb().len();
+                Some(self.rb_mut().split_to(len))
+            }
         }
     }
 }

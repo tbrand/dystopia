@@ -139,8 +139,6 @@ fn sync(cloud_addr: SocketAddr) {
 
                 Either::A(f)
             } else {
-                log::debug!("Sync audit log...");
-
                 let f = LatestTs::new().and_then(move |ts| match SyncAudit::new(cloud_addr, ts) {
                     Ok(f) => {
                         let f = f.and_then(|res| {
