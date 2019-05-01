@@ -127,8 +127,8 @@ fn join(
     Box::new(f)
 }
 
-fn process(socket: TcpStream, manager: Box<Manager + Send>) {
-    let origin = Origin::new(socket);
+fn process(socket: TcpStream, manager: Box<Manager + Send>, read_timeout: u64) {
+    let origin = Origin::new_with_timeout(socket, read_timeout);
     let f = origin
         .into_future()
         .map_err(|(e, _)| e)
@@ -229,6 +229,7 @@ pub fn main_inner(
     addr: SocketAddr,
     healthcheck_timeout: u64,
     node_deletion_timeout: u64,
+    read_timeout: u64,
 ) -> Result<()> {
     let manager = manager::create(ManagerType::MEM);
     let manager_healthcheck = manager.clone();
@@ -237,7 +238,7 @@ pub fn main_inner(
     let tasks = listener
         .incoming()
         .for_each(move |socket| {
-            process(socket, manager.clone());
+            process(socket, manager.clone(), read_timeout);
             Ok(())
         })
         .map_err(|e| {

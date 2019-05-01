@@ -38,6 +38,7 @@ pub fn healthcheck_interval<'a, 'b>() -> clap::Arg<'a, 'b> {
         .long("healthcheck-interval")
         .default_value("10")
         .help("Interval seconds of healthchecking.")
+        .takes_value(true)
 }
 
 pub fn node_deletion_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
@@ -45,4 +46,13 @@ pub fn node_deletion_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
         .long("node-deletion-timeout")
         .default_value("20")
         .help("A timeout seconds of node deletion.")
+        .takes_value(true)
+}
+
+pub fn read_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
+    clap::Arg::with_name("read-timeout")
+        .long("read-timeout")
+        .default_value("10")
+        .help("Read timeout as secs.")
+        .takes_value(true)
 }

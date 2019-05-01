@@ -4,9 +4,8 @@ use dytp_protocol::delim::Delim;
 use failure::Error;
 use futures::try_ready;
 use std::io::Write;
-use std::net::TcpStream;
-use std::net::ToSocketAddrs;
-use std::time::Duration;
+use std::net::{TcpStream, ToSocketAddrs};
+use std::time::{Duration, Instant};
 use tokio::prelude::*;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -18,6 +17,8 @@ pub struct Upstream {
     wb: BytesMut,
     read_delim: Delim,
     write_delim: Delim,
+    read_timeout: Duration,
+    read_since: Option<Instant>,
     pub parse_http: bool,
 }
 
@@ -82,6 +83,22 @@ impl Connection for Upstream {
         &mut self.read_delim
     }
 
+    fn read_timeout(&self) -> &Duration {
+        &self.read_timeout
+    }
+
+    fn read_timeout_mut(&mut self) -> &mut Duration {
+        &mut self.read_timeout
+    }
+
+    fn read_since(&self) -> &Option<Instant> {
+        &self.read_since
+    }
+
+    fn read_since_mut(&mut self) -> &mut Option<Instant> {
+        &mut self.read_since
+    }
+
     fn write_delim(&self) -> &Delim {
         &self.write_delim
     }
@@ -143,6 +160,27 @@ impl Upstream {
             wb: BytesMut::new(),
             read_delim: Delim::Dytp,
             write_delim: Delim::Dytp,
+            read_timeout: Duration::from_secs(5),
+            read_since: None,
+            parse_http: false,
+        })
+    }
+
+    pub fn new_with_timeout<A: ToSocketAddrs>(addr: A, read_timeout: u64) -> Result<Upstream> {
+        let stream = TcpStream::connect(addr)?;
+        let _ = stream.set_nodelay(true);
+        let _ = stream.set_nonblocking(true);
+        let _ = stream.set_write_timeout(Some(Duration::from_secs(30)));
+        let _ = stream.set_read_timeout(Some(Duration::from_secs(read_timeout)));
+
+        Ok(Upstream {
+            stream,
+            rb: BytesMut::new(),
+            wb: BytesMut::new(),
+            read_delim: Delim::Dytp,
+            write_delim: Delim::Dytp,
+            read_timeout: Duration::from_secs(read_timeout),
+            read_since: None,
             parse_http: false,
         })
     }

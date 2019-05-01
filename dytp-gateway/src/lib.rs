@@ -29,10 +29,10 @@ fn ignore() -> ProcessFuture {
     Box::new(future::ok(()))
 }
 
-fn process(socket: TcpStream, hops: usize) {
+fn process(socket: TcpStream, hops: usize, read_timeout: u64) {
     log::debug!("received new request");
 
-    let request = Request::new(socket);
+    let request = Request::new_with_timeout(socket, read_timeout);
     let process = request
         .into_future()
         .map_err(|(e, _)| e)
@@ -77,9 +77,10 @@ fn process(socket: TcpStream, hops: usize) {
                                 })
                                 .collect();
 
-                            let origin = Origin::new(req.stream());
+                            let origin = Origin::new_with_timeout(req.stream(), read_timeout);
 
-                            if let Ok(upstream) = Upstream::new(nodes[0]) {
+                            if let Ok(upstream) = Upstream::new_with_timeout(nodes[0], read_timeout)
+                            {
                                 if let Ok(rely) =
                                     Rely::new(origin, upstream, route_nodes, &ctx.buf, ctx.tls)
                                 {
@@ -198,12 +199,17 @@ fn sync(cloud_addr: SocketAddr) {
     tokio::spawn(f);
 }
 
-pub fn main_inner(addr: SocketAddr, cloud_addr: SocketAddr, hops: usize) -> Result<()> {
+pub fn main_inner(
+    addr: SocketAddr,
+    cloud_addr: SocketAddr,
+    hops: usize,
+    read_timeout: u64,
+) -> Result<()> {
     let listener = TcpListener::bind(&addr).unwrap();
     let tasks = listener
         .incoming()
         .for_each(move |socket| {
-            process(socket, hops);
+            process(socket, hops, read_timeout);
             Ok(())
         })
         .map_err(|e| {
