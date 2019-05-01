@@ -38,8 +38,12 @@ pub trait Connection {
         *self.write_delim_mut() = delim;
     }
 
-    fn remaining(&self) -> bool {
-        !self.wb().is_empty() || !self.rb().is_empty()
+    fn wb_remaining(&self) -> bool {
+        !self.wb().is_empty()
+    }
+
+    fn rb_remaining(&self) -> bool {
+        !self.rb().is_empty()
     }
 
     fn try_write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {

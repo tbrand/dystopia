@@ -110,28 +110,31 @@ impl Future for Rely {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let mut notified: bool = false;
+        let mut notify: bool = false;
 
         match self.origin.poll() {
             Ok(Async::Ready(Some(payload))) => {
+                notify = true;
+
                 self.rely(&payload)?;
             }
             Ok(Async::Ready(None)) => {
                 self.origin_closed = true;
             }
             Ok(Async::NotReady) => {
-                if !notified {
-                    task::current().notify();
-                    notified = true;
-                }
+                notify = true;
             }
             Err(_) => {
+                notify = true;
+
                 self.origin_closed = true;
             }
         }
 
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
+                notify = true;
+
                 let decrypted = self.decrypt(&payload);
 
                 self.origin.write(&decrypted)?;
@@ -141,36 +144,42 @@ impl Future for Rely {
                 self.upstream_closed = true;
             }
             Ok(Async::NotReady) => {
-                if !notified {
-                    task::current().notify();
-                    notified = true;
-                }
+                notify = true;
             }
             Err(_) => {
+                notify = true;
+
                 self.upstream_closed = true;
             }
         }
 
-        if self.origin_closed && self.origin.remaining() {
-            if !notified {
-                task::current().notify();
-            }
-            return Ok(Async::NotReady);
+        if notify {
+            task::current().notify();
         }
 
-        if self.upstream_closed && self.upstream.remaining() {
-            if !notified {
-                task::current().notify();
-            }
-            return Ok(Async::NotReady);
+        if self.origin_closed && self.origin.wb_remaining() {
+            log::debug!("origin closed but write buffer is remaining");
+            // TODO
+        }
+
+        if self.origin_closed && self.origin.rb_remaining() {
+            log::debug!("origin closed but read buffer is remaining");
+            // TODO
+        }
+
+        if self.upstream_closed && self.upstream.wb_remaining() {
+            // TODO
+            log::debug!("upstream closed but write buffer is remaining");
+        }
+
+        if self.upstream_closed && self.upstream.rb_remaining() {
+            // TODO
+            log::debug!("upstream closed but read buffer is remaining");
         }
 
         if self.origin_closed || self.upstream_closed {
             Ok(Async::Ready(()))
         } else {
-            if !notified {
-                task::current().notify();
-            }
             Ok(Async::NotReady)
         }
     }

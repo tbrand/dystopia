@@ -31,14 +31,11 @@ impl Upstream {
                 for header in headers.iter() {
                     if header.name == "Content-Length" {
                         let len: usize = std::str::from_utf8(header.value)?.parse()?;
-                        log::debug!("content length={}", len);
 
                         if self.rb.len() - body_start == len {
                             if !self.rb.ends_with(b"\r\n") {
                                 // It doesn't end with http delimiter.
                                 // Change the mode from Delim::Http to Delim::None
-                                log::debug!("changed delimiter mode: Http => None");
-
                                 self.read_delim = Delim::None;
                             }
 
