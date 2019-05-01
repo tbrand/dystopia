@@ -125,103 +125,106 @@ impl Future for Rely {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let mut notified: bool = false;
+        let mut notify: bool = false;
 
         match self.origin.poll() {
-            Ok(Async::Ready(Some(payload))) => match self.handshake {
-                Handshake::RecvAesKey { hop } => {
-                    if hop == self.hop {
-                        self.aes_key_iv = Some(self.rsa_decrypt(&payload));
-                    } else {
+            Ok(Async::Ready(Some(payload))) => {
+                notify = true;
+
+                match self.handshake {
+                    Handshake::RecvAesKey { hop } => {
+                        if hop == self.hop {
+                            self.aes_key_iv = Some(self.rsa_decrypt(&payload));
+                        } else {
+                            self.proxy(&payload)?;
+                        }
+
+                        if hop == 0 {
+                            self.handshake = Handshake::Done;
+                        } else {
+                            self.handshake = Handshake::RecvRely { hop: hop - 1 };
+                        }
+                    }
+                    Handshake::RecvRely { hop } => {
                         self.proxy(&payload)?;
+                        self.handshake = Handshake::RecvAesKey { hop };
                     }
+                    Handshake::Done => {
+                        let decrypted = self.aes_decrypt(&payload);
 
-                    if hop == 0 {
-                        self.handshake = Handshake::Done;
-                    } else {
-                        self.handshake = Handshake::RecvRely { hop: hop - 1 };
-                    }
-
-                    if !notified {
-                        task::current().notify();
-                        notified = true;
+                        self.proxy(&decrypted)?;
                     }
                 }
-                Handshake::RecvRely { hop } => {
-                    self.proxy(&payload)?;
-                    self.handshake = Handshake::RecvAesKey { hop };
-
-                    if !notified {
-                        task::current().notify();
-                        notified = true;
-                    }
-                }
-                Handshake::Done => {
-                    let decrypted = self.aes_decrypt(&payload);
-
-                    self.proxy(&decrypted)?;
-                }
-            },
+            }
             Ok(Async::Ready(None)) => {
                 self.origin_closed = true;
             }
             Ok(Async::NotReady) => {
-                if !notified {
-                    task::current().notify();
-                    notified = true;
-                }
+                notify = true;
             }
             Err(_) => {
+                notify = true;
+
                 self.origin_closed = true;
             }
         }
 
         match self.upstream.poll() {
-            Ok(Async::Ready(Some(payload))) => match self.handshake {
-                Handshake::Done => {
-                    let encrypted = self.aes_encrypt(&payload);
+            Ok(Async::Ready(Some(payload))) => {
+                notify = true;
 
-                    self.origin.write(&encrypted)?;
-                    self.origin.flush()?;
+                match self.handshake {
+                    Handshake::Done => {
+                        let encrypted = self.aes_encrypt(&payload);
+
+                        self.origin.write(&encrypted)?;
+                        self.origin.flush()?;
+                    }
+                    _ => {
+                        log::warn!("drop a payload from upstream coming during handshake.");
+                    }
                 }
-                _ => {
-                    log::warn!("drop a payload from upstream coming during handshake.");
-                }
-            },
+            }
             Ok(Async::Ready(None)) => {
                 self.upstream_closed = true;
             }
             Ok(Async::NotReady) => {
-                if !notified {
-                    task::current().notify();
-                    notified = true;
-                }
+                notify = true;
             }
             Err(_) => {
+                notify = true;
+
                 self.upstream_closed = true;
             }
         }
 
-        if self.origin_closed && self.origin.remaining() {
-            if !notified {
-                task::current().notify();
-            }
-            return Ok(Async::NotReady);
+        if notify {
+            task::current().notify();
         }
 
-        if self.upstream_closed && self.upstream.remaining() {
-            if !notified {
-                task::current().notify();
-            }
-            return Ok(Async::NotReady);
+        if self.origin_closed && self.origin.wb_remaining() {
+            // TODO
+            log::debug!("origin closed but write buffer is remaining");
+        }
+
+        if self.origin_closed && self.origin.rb_remaining() {
+            // TODO
+            log::debug!("origin closed but read buffer is remaining");
+        }
+
+        if self.upstream_closed && self.upstream.wb_remaining() {
+            // TODO
+            log::debug!("upstream closed but write buffer is remaining");
+        }
+
+        if self.upstream_closed && self.upstream.rb_remaining() {
+            // TODO
+            log::debug!("upstream closed but read buffer is remaining");
         }
 
         if self.origin_closed || self.upstream_closed {
             Ok(Async::Ready(()))
         } else {
-            if !notified {
-                task::current().notify();
-            }
             Ok(Async::NotReady)
         }
     }

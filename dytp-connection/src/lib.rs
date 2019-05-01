@@ -17,6 +17,7 @@ use dytp_protocol as protocol;
 use dytp_protocol::delim::Delim;
 use failure::Error;
 use futures::prelude::*;
+use std::time::{Duration, Instant};
 use tokio::prelude::*;
 
 pub trait Connection {
@@ -26,6 +27,10 @@ pub trait Connection {
     fn rb_mut(&mut self) -> &mut BytesMut;
     fn read_delim(&self) -> &Delim;
     fn read_delim_mut(&mut self) -> &mut Delim;
+    fn read_timeout(&self) -> &Duration;
+    fn read_timeout_mut(&mut self) -> &mut Duration;
+    fn read_since(&self) -> &Option<Instant>;
+    fn read_since_mut(&mut self) -> &mut Option<Instant>;
     fn write_delim(&self) -> &Delim;
     fn write_delim_mut(&mut self) -> &mut Delim;
     fn fill(&mut self) -> Poll<(), Error>;
@@ -38,8 +43,12 @@ pub trait Connection {
         *self.write_delim_mut() = delim;
     }
 
-    fn remaining(&self) -> bool {
-        !self.wb().is_empty() || !self.rb().is_empty()
+    fn wb_remaining(&self) -> bool {
+        !self.wb().is_empty()
+    }
+
+    fn rb_remaining(&self) -> bool {
+        !self.rb().is_empty()
     }
 
     fn try_write(&mut self, buf: &[u8]) -> Result<usize, std::io::Error> {
@@ -66,33 +75,16 @@ pub trait Connection {
     }
 
     fn try_read(&mut self) -> Poll<Option<BytesMut>, Error> {
+        if self.read_since().is_none() {
+            *self.read_since_mut() = Some(Instant::now());
+        }
+
         let disconnected = self.fill()?.is_ready();
 
         if !self.rb().is_empty() {
-            if let Some(payload) = match self.read_delim() {
-                Delim::Dytp => {
-                    if let Some(p) = protocol::parse(self.rb_mut()) {
-                        return Ok(Async::Ready(Some((p.1).0)));
-                    } else {
-                        return Ok(Async::NotReady);
-                    }
-                }
-                Delim::Http => self
-                    .rb()
-                    .windows(2)
-                    .enumerate()
-                    .find(|&(_, bytes)| bytes == b"\r\n")
-                    .map(|(i, _)| i)
-                    .map(|i| {
-                        let mut p = self.rb_mut().split_to(i + 2);
-                        p.split_off(i);
-                        p
-                    }),
-                Delim::None => {
-                    let len = self.rb().len();
-                    Some(self.rb_mut().split_to(len))
-                }
-            } {
+            if let Some(payload) = self.try_read_delim() {
+                *self.read_since_mut() = None;
+
                 return Ok(Async::Ready(Some(payload)));
             }
         }
@@ -100,9 +92,44 @@ pub trait Connection {
         if disconnected {
             Ok(Async::Ready(None))
         } else {
+            if Instant::now().duration_since(*self.read_since().as_ref().unwrap())
+                > *self.read_timeout()
+            {
+                log::debug!("read timeout");
+
+                return Ok(Async::Ready(None));
+            }
+
             task::current().notify();
 
             Ok(Async::NotReady)
+        }
+    }
+
+    fn try_read_delim(&mut self) -> Option<BytesMut> {
+        match self.read_delim() {
+            Delim::Dytp => {
+                if let Some(p) = protocol::parse(self.rb_mut()) {
+                    Some((p.1).0)
+                } else {
+                    None
+                }
+            }
+            Delim::Http => self
+                .rb()
+                .windows(2)
+                .enumerate()
+                .find(|&(_, bytes)| bytes == b"\r\n")
+                .map(|(i, _)| i)
+                .map(|i| {
+                    let mut p = self.rb_mut().split_to(i + 2);
+                    p.split_off(i);
+                    p
+                }),
+            Delim::None => {
+                let len = self.rb().len();
+                Some(self.rb_mut().split_to(len))
+            }
         }
     }
 }

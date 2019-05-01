@@ -2,10 +2,10 @@ use crate::Connection;
 use bytes::BytesMut;
 use dytp_protocol::delim::Delim;
 use failure::Error;
+use futures::try_ready;
 use std::io::Write;
-use std::net::TcpStream;
-use std::net::ToSocketAddrs;
-use std::time::Duration;
+use std::net::{TcpStream, ToSocketAddrs};
+use std::time::{Duration, Instant};
 use tokio::prelude::*;
 
 type Result<T> = std::result::Result<T, Error>;
@@ -17,6 +17,8 @@ pub struct Upstream {
     wb: BytesMut,
     read_delim: Delim,
     write_delim: Delim,
+    read_timeout: Duration,
+    read_since: Option<Instant>,
     pub parse_http: bool,
 }
 
@@ -25,37 +27,34 @@ impl Upstream {
         let mut headers = [httparse::EMPTY_HEADER; 32];
         let mut req = httparse::Response::new(&mut headers);
 
-        let res = req.parse(&self.rb)?;
+        match req.parse(&self.rb)? {
+            httparse::Status::Complete(body_start) => {
+                for header in headers.iter() {
+                    if header.name == "Content-Length" {
+                        let len: usize = std::str::from_utf8(header.value)?.parse()?;
 
-        if res.is_partial() {
-            return Ok(Async::NotReady);
-        }
+                        if self.rb.len() - body_start == len {
+                            if !self.rb.ends_with(b"\r\n") {
+                                // It doesn't end with http delimiter.
+                                // Change the mode from Delim::Http to Delim::None
+                                self.read_delim = Delim::None;
+                            }
 
-        for header in headers.iter() {
-            if header.name == "Content-Length" {
-                let len: usize = std::str::from_utf8(header.value)?.parse()?;
-
-                if let Some(start_body) = self
-                    .rb
-                    .windows(4)
-                    .enumerate()
-                    .find(|&(_, bytes)| bytes == b"\r\n\r\n")
-                    .map(|(i, _)| i)
-                {
-                    if self.rb.len() - start_body - 4 == len {
-                        if !self.rb.ends_with(b"\r\n") {
-                            // It doesn't end with http delimiter.
-                            // Change the mode from Delim::Http to Delim::None
-                            self.read_delim = Delim::None;
+                            return Ok(Async::Ready(()));
+                        } else {
+                            return Ok(Async::NotReady);
                         }
-
-                        return Ok(Async::Ready(()));
                     }
                 }
             }
+            httparse::Status::Partial => {
+                return Ok(Async::NotReady);
+            }
         }
 
-        Ok(Async::NotReady)
+        log::debug!("content-length header not found");
+
+        Ok(Async::Ready(()))
     }
 }
 
@@ -84,6 +83,22 @@ impl Connection for Upstream {
         &mut self.read_delim
     }
 
+    fn read_timeout(&self) -> &Duration {
+        &self.read_timeout
+    }
+
+    fn read_timeout_mut(&mut self) -> &mut Duration {
+        &mut self.read_timeout
+    }
+
+    fn read_since(&self) -> &Option<Instant> {
+        &self.read_since
+    }
+
+    fn read_since_mut(&mut self) -> &mut Option<Instant> {
+        &mut self.read_since
+    }
+
     fn write_delim(&self) -> &Delim {
         &self.write_delim
     }
@@ -100,16 +115,6 @@ impl Connection for Upstream {
                 Ok(n) => {
                     if n > 0 {
                         self.rb.extend_from_slice(&b[0..n]);
-
-                        if self.parse_http {
-                            match self.parse_http() {
-                                Ok(Async::Ready(())) => {
-                                    return Ok(Async::Ready(()));
-                                }
-                                Err(e) => return Err(e.into()),
-                                _ => {}
-                            }
-                        }
                     } else {
                         return Ok(Async::Ready(()));
                     }
@@ -155,6 +160,27 @@ impl Upstream {
             wb: BytesMut::new(),
             read_delim: Delim::Dytp,
             write_delim: Delim::Dytp,
+            read_timeout: Duration::from_secs(5),
+            read_since: None,
+            parse_http: false,
+        })
+    }
+
+    pub fn new_with_timeout<A: ToSocketAddrs>(addr: A, read_timeout: u64) -> Result<Upstream> {
+        let stream = TcpStream::connect(addr)?;
+        let _ = stream.set_nodelay(true);
+        let _ = stream.set_nonblocking(true);
+        let _ = stream.set_write_timeout(Some(Duration::from_secs(30)));
+        let _ = stream.set_read_timeout(Some(Duration::from_secs(read_timeout)));
+
+        Ok(Upstream {
+            stream,
+            rb: BytesMut::new(),
+            wb: BytesMut::new(),
+            read_delim: Delim::Dytp,
+            write_delim: Delim::Dytp,
+            read_timeout: Duration::from_secs(read_timeout),
+            read_since: None,
             parse_http: false,
         })
     }
@@ -165,6 +191,26 @@ impl Future for Upstream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.try_read()
+        let disconnected = self.fill()?.is_ready();
+
+        if !self.rb.is_empty() && self.parse_http {
+            try_ready!(self.parse_http());
+
+            self.parse_http = false;
+        }
+
+        if !self.rb.is_empty() {
+            if let Some(payload) = self.try_read_delim() {
+                return Ok(Async::Ready(Some(payload)));
+            }
+        }
+
+        if disconnected {
+            Ok(Async::Ready(None))
+        } else {
+            task::current().notify();
+
+            Ok(Async::NotReady)
+        }
     }
 }

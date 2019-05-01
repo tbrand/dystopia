@@ -5,6 +5,7 @@ use failure::Error;
 use futures::prelude::*;
 use futures::try_ready;
 use std::io::Write;
+use std::time::{Duration, Instant};
 use tokio::net::TcpStream;
 use tokio::prelude::*;
 
@@ -15,6 +16,8 @@ pub struct Origin {
     wb: BytesMut,
     read_delim: Delim,
     write_delim: Delim,
+    read_timeout: Duration,
+    read_since: Option<Instant>,
 }
 
 impl Connection for Origin {
@@ -40,6 +43,22 @@ impl Connection for Origin {
 
     fn read_delim_mut(&mut self) -> &mut Delim {
         &mut self.read_delim
+    }
+
+    fn read_timeout(&self) -> &Duration {
+        &self.read_timeout
+    }
+
+    fn read_timeout_mut(&mut self) -> &mut Duration {
+        &mut self.read_timeout
+    }
+
+    fn read_since(&self) -> &Option<Instant> {
+        &self.read_since
+    }
+
+    fn read_since_mut(&mut self) -> &mut Option<Instant> {
+        &mut self.read_since
     }
 
     fn write_delim(&self) -> &Delim {
@@ -71,6 +90,20 @@ impl Origin {
             wb: BytesMut::new(),
             read_delim: Delim::Dytp,
             write_delim: Delim::Dytp,
+            read_timeout: Duration::from_secs(5),
+            read_since: None,
+        }
+    }
+
+    pub fn new_with_timeout(stream: TcpStream, read_timeout: u64) -> Self {
+        Origin {
+            stream,
+            rb: BytesMut::new(),
+            wb: BytesMut::new(),
+            read_delim: Delim::Dytp,
+            write_delim: Delim::Dytp,
+            read_timeout: Duration::from_secs(read_timeout),
+            read_since: None,
         }
     }
 }

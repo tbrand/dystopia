@@ -25,8 +25,8 @@ use tokio::runtime::Runtime;
 
 type ProcessFuture = Box<Future<Item = (), Error = Error> + Send>;
 
-fn process(socket: TcpStream, state: Arc<RwLock<State>>) {
-    let origin = Origin::new(socket);
+fn process(socket: TcpStream, state: Arc<RwLock<State>>, read_timeout: u64) {
+    let origin = Origin::new_with_timeout(socket, read_timeout);
     let process = origin
         .into_future()
         .map_err(|(e, _)| e)
@@ -57,7 +57,7 @@ fn process(socket: TcpStream, state: Arc<RwLock<State>>) {
                 if let Ok(m) = method {
                     match encrypted::Method::from(m.as_slice()) {
                         encrypted::Method::RELY { hop, addr, tls } => {
-                            if let Ok(upstream) = Upstream::new(addr) {
+                            if let Ok(upstream) = Upstream::new_with_timeout(addr, read_timeout) {
                                 return Box::new(Rely::new(
                                     state.clone(),
                                     origin,
@@ -81,7 +81,12 @@ fn process(socket: TcpStream, state: Arc<RwLock<State>>) {
     tokio::spawn(process);
 }
 
-pub fn main_inner(addr: SocketAddr, global_addr: SocketAddr, cloud_addr: SocketAddr) -> Result<()> {
+pub fn main_inner(
+    addr: SocketAddr,
+    global_addr: SocketAddr,
+    cloud_addr: SocketAddr,
+    read_timeout: u64,
+) -> Result<()> {
     let state = Arc::new(RwLock::new(State::new()));
     let listener = TcpListener::bind(&addr).unwrap();
     let version = crate_version!().parse()?;
@@ -97,7 +102,7 @@ pub fn main_inner(addr: SocketAddr, global_addr: SocketAddr, cloud_addr: SocketA
     let tasks = listener
         .incoming()
         .for_each(move |socket| {
-            process(socket, state.clone());
+            process(socket, state.clone(), read_timeout);
             Ok(())
         })
         .map_err(|e| {
