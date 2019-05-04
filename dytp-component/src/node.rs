@@ -1,7 +1,6 @@
 use crate::node_state::NodeState;
 use crate::schema::nodes;
 use diesel::deserialize::Queryable;
-use diesel::prelude::*;
 use semver::Version;
 use std::net::SocketAddr;
 
@@ -34,14 +33,40 @@ impl Queryable<nodes::SqlType, diesel::pg::Pg> for Node {
     }
 }
 
-impl Insertable<nodes::table> for Node {
-    type Values = (String, String, String);
+#[derive(Insertable)]
+#[table_name = "nodes"]
+pub struct NodeInsert {
+    pub addr: String,
+    pub state: String,
+    pub version: String,
+}
 
-    fn values(self) -> Self::Values {
-        let addr = format!("{}", self.addr);
-        let state = format!("{}", self.state);
-        let version = format!("{}", self.version);
+impl NodeInsert {
+    pub fn new(addr: &SocketAddr, version: &Version) -> NodeInsert {
+        let addr = format!("{}", addr);
+        let state = format!("{}", NodeState::ACTIVE);
+        let version = format!("{}", version);
 
-        (addr, state, version)
+        NodeInsert {
+            addr,
+            state,
+            version,
+        }
+    }
+}
+
+#[derive(AsChangeset)]
+#[table_name = "nodes"]
+pub struct NodeUpdate {
+    pub state: Option<String>,
+    pub version: Option<String>,
+}
+
+impl NodeUpdate {
+    pub fn new(state: Option<&NodeState>, version: Option<&Version>) -> NodeUpdate {
+        let state = state.map(|s| format!("{}", s));
+        let version = version.map(|v| format!("{}", v));
+
+        NodeUpdate { state, version }
     }
 }

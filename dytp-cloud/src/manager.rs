@@ -3,10 +3,16 @@ pub mod pg;
 
 use dytp_component::audit::Audit;
 use dytp_component::node::Node;
+
+use chrono::prelude::*;
 use failure::Error;
 use futures::prelude::*;
 use semver::Version;
 use std::net::SocketAddr;
+
+pub fn ts() -> i64 {
+    Utc::now().timestamp_nanos()
+}
 
 pub enum ManagerType {
     MEM,

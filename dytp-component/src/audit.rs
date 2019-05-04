@@ -2,7 +2,6 @@ use crate::node::Node;
 use crate::node_state::NodeState;
 use crate::schema::audits;
 use diesel::deserialize::Queryable;
-use diesel::prelude::*;
 use semver::Version;
 use std::net::SocketAddr;
 
@@ -44,15 +43,26 @@ impl Queryable<audits::SqlType, diesel::pg::Pg> for Audit {
     }
 }
 
-impl Insertable<audits::table> for Audit {
-    type Values = (String, String, String, i64);
+#[derive(Insertable)]
+#[table_name = "audits"]
+pub struct AuditInsert {
+    pub addr: String,
+    pub state: String,
+    pub version: String,
+    pub ts: i64,
+}
 
-    fn values(self) -> Self::Values {
-        let addr = format!("{}", self.addr);
-        let state = format!("{}", self.state);
-        let version = format!("{}", self.version);
-        let ts = self.ts;
+impl AuditInsert {
+    pub fn new(addr: &SocketAddr, state: &NodeState, version: &Version, ts: i64) -> AuditInsert {
+        let addr = format!("{}", addr);
+        let state = format!("{}", state);
+        let version = format!("{}", version);
 
-        (addr, state, version, ts)
+        AuditInsert {
+            addr,
+            state,
+            version,
+            ts,
+        }
     }
 }
