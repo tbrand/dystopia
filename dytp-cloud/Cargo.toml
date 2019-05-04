@@ -19,4 +19,5 @@ log = "*"
 openssl = "*"
 chrono = "*"
 semver = "*"
-diesel = { version = "*", features = ["postgres"] }
+diesel = { version = "*", features = ["postgres", "r2d2"] }
+r2d2 = "*"
