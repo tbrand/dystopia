@@ -1,0 +1,5 @@
+CREATE TABLE nodes(
+  addr VARCHAR PRIMARY KEY,
+  state VARCHAR NOT NULL,
+  version VARCHAR NOT NULL
+)

@@ -8,3 +8,4 @@ edition = "2018"
 failure = "*"
 regex = "*"
 semver = "*"
+diesel = { version = "*", features = ["postgres"] }
