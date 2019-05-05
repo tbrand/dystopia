@@ -28,10 +28,10 @@ install:
 
 test_script:
   - if [%APPVEYOR_REPO_TAG%]==[false] (
-      cargo rustc build --target %TARGET% --features all -- -C lto -L :\Program Files\PostgreSQL\9.5\lib &&
-      cargo rustc build --target %TARGET% --features all --release -- -C lto -L :\Program Files\PostgreSQL\9.5\lib &&
-      cargo rustc test --target %TARGET% --features all -- -C lto -L :\Program Files\PostgreSQL\9.5\lib &&
-      cargo rustc test --target %TARGET% --features all --release -- -C lto -L :\Program Files\PostgreSQL\9.5\lib
+      cargo rustc build --target %TARGET% --features all --bin dytp -- -C lto -L C:\Program Files\PostgreSQL\9.5\lib &&
+      cargo rustc build --target %TARGET% --features all --release --bin dytp -- -C lto -L C:\Program Files\PostgreSQL\9.5\lib &&
+      cargo rustc test --target %TARGET% --features all --bin dytp -- -C lto -L C:\Program Files\PostgreSQL\9.5\lib &&
+      cargo rustc test --target %TARGET% --features all --release --bin dytp -- -C lto -L C:\Program Files\PostgreSQL\9.5\lib
     )
 
 before_test:
