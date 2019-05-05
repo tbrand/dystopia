@@ -38,7 +38,7 @@ before_test:
   - SET PATH=C:\Program Files\PostgreSQL\9.5\bin;%PATH%
 
 before_deploy:
-  - cargo rustc --target %TARGET% --features all --release --bin dytp -- -C lto
+  - cargo rustc --target %TARGET% --features all --release --bin dytp -- -C lto --L C:\Program Files\PostgreSQL\9.5\lib
   - ps: ci\before_deploy.ps1
 
 deploy:
