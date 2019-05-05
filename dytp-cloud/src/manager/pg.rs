@@ -5,6 +5,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
 use dytp_component::audit::{Audit, AuditInsert};
+use dytp_component::error::AuditError;
 use dytp_component::node::{Node, NodeInsert, NodeUpdate};
 use dytp_component::node_state::NodeState;
 use dytp_component::schema::audits;
@@ -53,7 +54,6 @@ fn audit_create(conn: &PgConnection, a: &SocketAddr, s: &NodeState, v: &Version)
         .map_err(|e| e.into())
 }
 
-// TODO: remove unwrap
 impl Manager for Pg {
     fn join(&self, a: SocketAddr, v: Version) -> Box<Future<Item = (), Error = Error> + Send> {
         let conn = self.pool.clone().get().unwrap();
@@ -71,8 +71,12 @@ impl Manager for Pg {
             node_create(&conn, &a, &v).unwrap();
         } else {
             if node[0].state == NodeState::ACTIVE {
+                log::warn!("node {} is already active", node[0].addr);
+
                 node_update(&conn, &a, NodeUpdate::new(None, Some(&v))).unwrap();
             } else {
+                log::info!("node {} has been recovered", node[0].addr);
+
                 node_update(
                     &conn,
                     &a,
@@ -97,7 +101,6 @@ impl Manager for Pg {
                 .map_err(|e| e.into())
         };
 
-        // TODO
         Box::new(futures::future::ok(()))
     }
 
@@ -117,7 +120,6 @@ impl Manager for Pg {
 
         audit_create(&conn, &addr, &NodeState::PENDING_DELETE, &version).unwrap();
 
-        // TODO
         Box::new(futures::future::ok(()))
     }
 
@@ -136,29 +138,72 @@ impl Manager for Pg {
             nodes.load::<Node>(&conn).unwrap()
         };
 
-        // TODO
         Box::new(futures::future::ok(nodes))
     }
 
-    fn sync(&self, ts: i64) -> Box<Future<Item = Vec<Audit>, Error = Error> + Send> {
+    fn sync(&self, t: i64) -> Box<Future<Item = Vec<Audit>, Error = Error> + Send> {
         let conn = self.pool.clone().get().unwrap();
+        let audits = {
+            use dytp_component::schema::audits::dsl::*;
 
-        // TODO
-        Box::new(futures::future::ok(Vec::new()))
+            audits
+                .select((addr, state, version, ts))
+                .filter(ts.gt(t))
+                .order_by(ts.desc())
+                .load::<Audit>(&conn)
+                .unwrap()
+        };
+
+        Box::new(futures::future::ok(audits))
     }
 
-    fn deleted_ts(&self, addr: SocketAddr) -> Box<Future<Item = i64, Error = Error> + Send> {
+    fn deleted_ts(&self, a: SocketAddr) -> Box<Future<Item = i64, Error = Error> + Send> {
         let conn = self.pool.clone().get().unwrap();
+        let audits = {
+            use dytp_component::schema::audits::dsl::*;
 
-        // TODO
-        Box::new(futures::future::ok(0))
+            audits
+                .filter(addr.eq(format!("{}", a)))
+                .order_by(ts.desc())
+                .limit(1)
+                .load::<Audit>(&conn)
+                .unwrap()
+        };
+
+        if audits.len() > 0 {
+            let audit = &audits[0];
+
+            match audit.state {
+                NodeState::ACTIVE => {
+                    log::warn!("try to delete but found active audit");
+
+                    return Box::new(futures::future::err(AuditError::InvalidAudit.into()));
+                }
+                NodeState::PENDING_DELETE => {
+                    return Box::new(futures::future::ok(audit.ts));
+                }
+            }
+        }
+
+        return Box::new(futures::future::err(AuditError::InvalidAudit.into()));
     }
 
     fn latest_ts(&self) -> Box<Future<Item = i64, Error = Error> + Send> {
         let conn = self.pool.clone().get().unwrap();
+        let audits = {
+            use dytp_component::schema::audits::dsl::*;
 
-        // TODO
-        Box::new(futures::future::ok(0))
+            audits
+                .select((addr, state, version, ts))
+                .order_by(ts.desc())
+                .limit(1)
+                .load::<Audit>(&conn)
+                .unwrap()
+        };
+
+        let ts = if audits.len() > 0 { *&audits[0].ts } else { 0 };
+
+        Box::new(futures::future::ok(ts))
     }
 }
 

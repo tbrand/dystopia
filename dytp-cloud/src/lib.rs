@@ -231,7 +231,7 @@ pub fn main_inner(
     node_deletion_timeout: u64,
     read_timeout: u64,
 ) -> Result<()> {
-    let manager = manager::create(ManagerType::MEM);
+    let manager = manager::create(ManagerType::PG);
     let manager_healthcheck = manager.clone();
 
     let listener = TcpListener::bind(&addr).unwrap();
