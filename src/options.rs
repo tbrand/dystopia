@@ -56,13 +56,3 @@ pub fn read_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
         .help("Read timeout as secs.")
         .takes_value(true)
 }
-
-pub fn database_url<'a, 'b>() -> clap::Arg<'a, 'b> {
-    clap::Arg::with_name("database-url")
-        .env("DATABASE_URL")
-        .long("database-url")
-        .default_value("mem")
-        .help("Database url be used. 'mem' means that cloud will not use any databases but use on memory manager.\nCurrently Postgres is only supported.\nThe url looks like `postgres://[username]:[password]@l[host]:[port]/[database]`")
-        .takes_value(true)
-        .required(true)
-}
