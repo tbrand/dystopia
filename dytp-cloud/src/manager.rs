@@ -16,7 +16,7 @@ pub fn ts() -> i64 {
 
 pub enum ManagerType {
     MEM,
-    PG,
+    PG { database_url: String },
 }
 
 pub trait ManagerClone {
@@ -50,6 +50,6 @@ impl Clone for Box<Manager + Send> {
 pub fn create(t: ManagerType) -> Box<Manager + Send> {
     match t {
         ManagerType::MEM => Box::new(mem::Mem::new()),
-        ManagerType::PG => Box::new(pg::Pg::new()),
+        ManagerType::PG { database_url } => Box::new(pg::Pg::new(&database_url)),
     }
 }

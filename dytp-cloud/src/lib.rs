@@ -230,8 +230,15 @@ pub fn main_inner(
     healthcheck_timeout: u64,
     node_deletion_timeout: u64,
     read_timeout: u64,
+    database_url: &str,
 ) -> Result<()> {
-    let manager = manager::create(ManagerType::PG);
+    let manager = match database_url {
+        "mem" => manager::create(ManagerType::MEM),
+        d => manager::create(ManagerType::PG {
+            database_url: d.to_owned(),
+        }),
+    };
+
     let manager_healthcheck = manager.clone();
 
     let listener = TcpListener::bind(&addr).unwrap();

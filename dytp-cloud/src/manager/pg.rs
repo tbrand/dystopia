@@ -13,7 +13,6 @@ use dytp_component::schema::nodes;
 use failure::Error;
 use futures::prelude::*;
 use semver::Version;
-use std::env;
 use std::net::SocketAddr;
 
 #[derive(Clone)]
@@ -22,9 +21,8 @@ pub struct Pg {
 }
 
 impl Pg {
-    pub fn new() -> Pg {
-        let database_uri = env::var("DATABASE_URL").unwrap();
-        let manager = ConnectionManager::<PgConnection>::new(database_uri);
+    pub fn new(database_url: &str) -> Pg {
+        let manager = ConnectionManager::<PgConnection>::new(database_url);
         let pool = r2d2::Pool::builder().build(manager).unwrap();
 
         Pg { pool }

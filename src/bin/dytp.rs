@@ -37,6 +37,7 @@ fn subcommand_cloud<'a, 'b>() -> clap::App<'a, 'b> {
         .arg(options::healthcheck_interval())
         .arg(options::node_deletion_timeout())
         .arg(options::read_timeout())
+        .arg(options::database_url())
 }
 
 #[cfg(any(feature = "gateway", feature = "all"))]
@@ -96,12 +97,14 @@ fn exec_cloud(matches: &clap::ArgMatches) -> Result<()> {
     let healthcheck_interval = matches.value_of("healthcheck-interval").unwrap().parse()?;
     let node_deletion_timeout = matches.value_of("node-deletion-timeout").unwrap().parse()?;
     let read_timeout = matches.value_of("read-timeout").unwrap().parse()?;
+    let database_url = matches.value_of("database-url").unwrap();
 
     cloud::main_inner(
         addr,
         healthcheck_interval,
         node_deletion_timeout,
         read_timeout,
+        database_url,
     )?;
 
     Ok(())
