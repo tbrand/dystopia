@@ -54,7 +54,6 @@ before_install:
   - sudo apt-cache search libpq-dev
   - echo $LD_LIBRARY_PATH
   - which psql
-  - export ${LD_LIBRARY_PATH}:/usr/lib/postgresql/9.5/lib
 
 install:
   - sh ci/install.sh
