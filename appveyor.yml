@@ -2,7 +2,7 @@
 # https://github.com/japaric/trust/tree/v0.1.2
 
 services:
-  - postgresql101
+  - postgresql95
 
 environment:
   global:
@@ -10,19 +10,8 @@ environment:
     CRATE_NAME: dytp
 
   matrix:
-    # MinGW
     - TARGET: i686-pc-windows-gnu
     - TARGET: x86_64-pc-windows-gnu
-
-    # MSVC
-    # - TARGET: i686-pc-windows-msvc
-    # - TARGET: x86_64-pc-windows-msvc
-
-    # Testing other channels
-    # - TARGET: x86_64-pc-windows-gnu
-    #   RUST_VERSION: nightly
-    # - TARGET: x86_64-pc-windows-msvc
-    #   RUST_VERSION: nightly
 
 install:
   - ps: >-
