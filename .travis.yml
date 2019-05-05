@@ -51,6 +51,9 @@ matrix:
 before_install:
   - set -e
   - rustup self update
+  - sudo apt-cache search libpq-dev
+  - echo $LD_LIBRARY_PATH
+  - which psql
 
 install:
   - sh ci/install.sh
