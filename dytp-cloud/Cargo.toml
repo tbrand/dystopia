@@ -17,6 +17,7 @@ env_logger = "*"
 lazy_static = "*"
 log = "*"
 openssl = "*"
+openssl-probe = "*"
 chrono = "*"
 semver = "*"
 diesel = { version = "*", features = ["postgres", "r2d2"] }

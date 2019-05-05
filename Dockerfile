@@ -1,4 +1,4 @@
-FROM ekidd/rust-musl-builder as builder
+FROM ekidd/rust-musl-builder:latest as builder
 
 ADD . ./
 RUN sudo chown -R rust:rust /home/rust
