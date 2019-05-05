@@ -3,12 +3,8 @@
 </h1>
 
 <p align="center">
-  <a href="https://travis-ci.com/tbrand/dystopia">
-    <img src="https://travis-ci.com/tbrand/dystopia.svg?branch=master"/>
-  </a>
-
-  <a href="https://ci.appveyor.com/project/tbrand/dystopia">
-    <img src="https://ci.appveyor.com/api/projects/status/3t3l8xm9lyjddl8k?svg=true"/>
+  <a href="https://circleci.com/gh/tbrand/dystopia/tree/master">
+    <img src="https://circleci.com/gh/tbrand/dystopia/tree/master.svg?style=svg" />
   </a>
 
   <a href="https://hub.docker.com/r/tbrand/dystopia">

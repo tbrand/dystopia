@@ -1,13 +1,14 @@
 pub mod mem;
 pub mod pg;
 
+use crate::error::{DatabaseError, Result};
+use chrono::prelude::*;
 use dytp_component::audit::Audit;
 use dytp_component::node::Node;
-
-use chrono::prelude::*;
 use failure::Error;
 use futures::prelude::*;
 use semver::Version;
+use std::env;
 use std::net::SocketAddr;
 
 pub fn ts() -> i64 {
@@ -47,9 +48,26 @@ impl Clone for Box<Manager + Send> {
     }
 }
 
-pub fn create(t: ManagerType) -> Box<Manager + Send> {
-    match t {
-        ManagerType::MEM => Box::new(mem::Mem::new()),
-        ManagerType::PG { database_url } => Box::new(pg::Pg::new(&database_url)),
+pub fn create() -> Result<Box<Manager + Send>> {
+    match env::var("DATABASE_URL") {
+        Ok(url) => {
+            use url::Url;
+
+            let url_parsed = Url::parse(&url)?;
+
+            match url_parsed.scheme() {
+                "postgres" => return Ok(Box::new(pg::Pg::new(&url))),
+                "mysql" => {
+                    log::error!("MySQL is not supported now. But will be soon!");
+                    return Err(DatabaseError::InvalidDatabaseUrl { url }.into());
+                }
+                "sqlite" => {
+                    log::error!("SQLite is not supported now. But will be soon!");
+                    return Err(DatabaseError::InvalidDatabaseUrl { url }.into());
+                }
+                _ => return Err(DatabaseError::InvalidDatabaseUrl { url }.into()),
+            }
+        }
+        Err(_) => return Ok(Box::new(mem::Mem::new())),
     }
 }

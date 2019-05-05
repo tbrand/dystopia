@@ -1,8 +1,8 @@
 pub mod error;
 pub mod manager;
 
-use crate::error::{DatabaseError, Result};
-use crate::manager::{Manager, ManagerType};
+use crate::error::Result;
+use crate::manager::Manager;
 use chrono::prelude::*;
 use dytp_component::node_state::NodeState;
 use dytp_connection::prelude::*;
@@ -13,7 +13,6 @@ use failure::Error;
 use futures::future::Either;
 use openssl::rsa::Padding;
 use semver::Version;
-use std::env;
 use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 use tokio::net::{TcpListener, TcpStream};
@@ -232,30 +231,7 @@ pub fn main_inner(
     node_deletion_timeout: u64,
     read_timeout: u64,
 ) -> Result<()> {
-    let manager = match env::var("DATABASE_URL") {
-        Ok(url) => {
-            use url::Url;
-
-            let url_parsed = Url::parse(&url)?;
-
-            match url_parsed.scheme() {
-                "postgres" => manager::create(ManagerType::PG {
-                    database_url: url.to_owned(),
-                }),
-                "mysql" => {
-                    log::error!("MySQL is not supported now. But will be soon!");
-                    return Err(DatabaseError::InvalidDatabaseUrl { url }.into());
-                }
-                "sqlite" => {
-                    log::error!("SQLite is not supported now. But will be soon!");
-                    return Err(DatabaseError::InvalidDatabaseUrl { url }.into());
-                }
-                _ => return Err(DatabaseError::InvalidDatabaseUrl { url }.into()),
-            }
-        }
-        Err(_) => manager::create(ManagerType::MEM),
-    };
-
+    let manager = manager::create()?;
     let manager_healthcheck = manager.clone();
 
     let listener = TcpListener::bind(&addr).unwrap();
