@@ -1,3 +1,6 @@
+// https://github.com/emk/rust-musl-builder/issues/64
+extern crate openssl;
+
 #[path = "../options.rs"]
 mod options;
 
@@ -115,6 +118,8 @@ fn exec_cloud(_maches: &clap::ArgMatches) -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    openssl_probe::init_ssl_cert_env_vars();
+
     if let Err(_) = std::env::var("RUST_LOG") {
         std::env::set_var("RUST_LOG", "dytp=info");
     }

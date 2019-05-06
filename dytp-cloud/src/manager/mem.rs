@@ -7,7 +7,6 @@ pub mod pending_delete;
 pub mod sync;
 
 use crate::manager::{Manager, ManagerClone};
-use chrono::prelude::*;
 use dytp_component::audit::Audit;
 use dytp_component::node::Node;
 use failure::Error;
@@ -16,10 +15,6 @@ use lazy_static::lazy_static;
 use semver::Version;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
-
-pub fn ts() -> i64 {
-    Utc::now().timestamp_nanos()
-}
 
 lazy_static! {
     pub static ref ON_MEM_NODES: Arc<RwLock<Vec<Node>>> = Arc::new(RwLock::new(Vec::new()));

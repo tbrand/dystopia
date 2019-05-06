@@ -16,6 +16,8 @@ clap = "*"
 env_logger = "*"
 failure = "*"
 log = "*"
+openssl = "*"
+openssl-probe = "*"
 
 [workspace]
 members = [

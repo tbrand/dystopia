@@ -8,9 +8,17 @@ jobs:
     steps:
       - checkout
       - run: sudo apt-get update -y && sudo apt-get install cmake libpq-dev -y
-      - run: cargo build --release
+      - run: cargo build --release --features all
 
-  test:
+  test-mem:
+    docker:
+      - image: circleci/rust:latest
+    steps:
+      - checkout
+      - run: sudo apt-get update -y && sudo apt-get install cmake libpq-dev -y
+      - run: cargo test --features all
+
+  test-postgres:
     docker:
       - image: circleci/rust:latest
         environment:
@@ -24,7 +32,7 @@ jobs:
       - run: sudo apt-get update -y && sudo apt-get install cmake libpq-dev -y
       - run: cargo install diesel_cli
       - run: diesel migration run
-      - run: cargo test
+      - run: cargo test --features all
 
 workflows:
   version: 2
@@ -32,4 +40,5 @@ workflows:
   pull_request:
     jobs:
       - build
-      - test
+      - test-mem
+      - test-postgres
