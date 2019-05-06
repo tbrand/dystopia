@@ -20,7 +20,7 @@
   <i>Real Anonymity on the Internet</i>
 </p>
 
-Dystopia aims to realize real anonymity on the internet world.
+Dystopia aims to realize real anonymity on the internet world by a transparent way.
 It implements onion routing with original protocols inspired by [Tor](https://www.torproject.org/).
 You can quickly enter the anonymous internet by the below.
 
@@ -37,6 +37,7 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 ### For Users
 - [How does Dystopia work?](https://github.com/tbrand/dystopia/wiki/How-does-Dystopia-work%3F)
 - [Performance Evaluation](https://github.com/tbrand/dystopia/wiki/Performance-Evaluation)
+- [Launch your gateway](https://github.com/tbrand/dystopia/wiki/Launch-your-gateway)
 - [Component: Gateway](https://github.com/tbrand/dystopia/wiki/Component:-Gateway)
 - [Component: Node](https://github.com/tbrand/dystopia/wiki/Component:-Node)
 - [Component: Cloud](https://github.com/tbrand/dystopia/wiki/Component:-Cloud)
