@@ -3,15 +3,15 @@
 </h1>
 
 <p align="center">
-  <a href="https://circleci.com/gh/tbrand/dystopia/tree/master">
+  <a href="https://circleci.com/gh/tbrand/dystopia/tree/master" target="_blank">
     <img src="https://circleci.com/gh/tbrand/dystopia/tree/master.svg?style=svg" />
   </a>
 
-  <a href="https://hub.docker.com/r/tbrand/dystopia">
+  <a href="https://hub.docker.com/r/tbrand/dystopia" target="_blank">
     <img src="https://img.shields.io/docker/cloud/build/tbrand/dystopia.svg"/>
   </a>
 
-  <a href="https://github.com/tbrand/dystopia/blob/master/LICENSE">
+  <a href="https://github.com/tbrand/dystopia/blob/master/LICENSE" target="_blank">
     <img src="https://img.shields.io/github/license/tbrand/dystopia.svg"/>
   </a>
 </p>
@@ -37,8 +37,6 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 ### For Users
 - [How does Dystopia work?](https://github.com/tbrand/dystopia/wiki/How-does-Dystopia-work%3F)
 - [Performance Evaluation](https://github.com/tbrand/dystopia/wiki/Performance-Evaluation)
-- [Build and Install](https://github.com/tbrand/dystopia/wiki/Build-and-Install)
-- [Use docker image](https://github.com/tbrand/dystopia/wiki/Use-docker-image)
 - [Component: Gateway](https://github.com/tbrand/dystopia/wiki/Component:-Gateway)
 - [Component: Node](https://github.com/tbrand/dystopia/wiki/Component:-Node)
 - [Component: Cloud](https://github.com/tbrand/dystopia/wiki/Component:-Cloud)
@@ -47,6 +45,8 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 
 ### For Developers
 - [Getting Started](https://github.com/tbrand/dystopia/wiki/Getting-Started)
+- [Build and Install](https://github.com/tbrand/dystopia/wiki/Build-and-Install)
+- [Use docker image](https://github.com/tbrand/dystopia/wiki/Use-docker-image)
 - [Testing](https://github.com/tbrand/dystopia/wiki/Testing)
 
 ## Appreciate your contributions!
