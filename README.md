@@ -52,8 +52,3 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 ## Appreciate your contributions!
 - We need more nodes to acquire real anonymity. Please [Joining to our public cloud](https://github.com/tbrand/dystopia/wiki/Joining-to-our-public-cloud) if you have any idle computing resources.
 - We need to implemenet more to make the protduct robust and fast. Send pull requests or opening issues when you have proposals.
-
-## Upcoming Tasks
-- [ ] Use Redis or MySQL to manage nodes
-- [ ] Speicfying a RSA key path to acquire HA.
-- [ ] Inbound outbound report for nodes.
