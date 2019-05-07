@@ -1,5 +1,5 @@
 use crate::error::Result;
-use dytp_component::health_resp::HealthResp;
+use dytp_component::health_resp_node::HealthRespNode;
 use dytp_connection::prelude::*;
 use dytp_protocol::method::plain;
 use failure::Error;
@@ -29,13 +29,13 @@ impl GetNodeHealth {
 }
 
 impl Future for GetNodeHealth {
-    type Item = Option<HealthResp>;
+    type Item = Option<HealthRespNode>;
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
-                let health = HealthResp::from(&payload as &[u8]);
+                let health = HealthRespNode::from(&payload as &[u8]);
 
                 return Ok(Async::Ready(Some(health)));
             }

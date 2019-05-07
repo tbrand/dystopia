@@ -1,5 +1,5 @@
 use clap::crate_version;
-use dytp_component::health_resp::HealthResp;
+use dytp_component::health_resp_node::HealthRespNode;
 use dytp_connection::prelude::*;
 use failure::Error;
 use futures::prelude::*;
@@ -20,7 +20,7 @@ impl Future for Health {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let res: Vec<u8> = HealthResp::new(crate_version!()).into();
+        let res: Vec<u8> = HealthRespNode::new(crate_version!()).into();
 
         self.origin.write(&res)?;
         self.origin.flush()?;

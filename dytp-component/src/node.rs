@@ -21,6 +21,38 @@ impl Node {
     }
 }
 
+impl std::fmt::Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} {} {}", self.addr, self.state, self.version)
+    }
+}
+
+impl Into<Vec<u8>> for Node {
+    fn into(self) -> Vec<u8> {
+        format!("{} {} {}", self.addr, self.state, self.version).into_bytes()
+    }
+}
+
+impl From<&[u8]> for Node {
+    fn from(n: &[u8]) -> Node {
+        let re = regex::Regex::new(r"^(.+?)\s(.+?)\s(.+?)$").unwrap();
+
+        for cap in re.captures_iter(std::str::from_utf8(n).unwrap()) {
+            let addr = cap[1].parse().unwrap();
+            let state = cap[2].parse().unwrap();
+            let version = cap[3].parse().unwrap();
+
+            return Node {
+                addr,
+                state,
+                version,
+            };
+        }
+
+        unreachable!();
+    }
+}
+
 impl Queryable<nodes::SqlType, diesel::pg::Pg> for Node {
     type Row = (String, String, String);
 

@@ -3,7 +3,9 @@ extern crate diesel;
 
 pub mod audit;
 pub mod error;
-pub mod health_resp;
+pub mod health_resp_cloud;
+pub mod health_resp_gateway;
+pub mod health_resp_node;
 pub mod node;
 pub mod node_state;
 pub mod schema;
