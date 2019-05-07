@@ -1,19 +1,41 @@
 use semver::Version;
 use std::net::SocketAddr;
 
+#[derive(PartialEq, Debug)]
+pub enum Common {
+    HEALTH, // Healcheck method
+    E,      // Invalid method
+}
+
+impl Into<Vec<u8>> for Common {
+    fn into(self) -> Vec<u8> {
+        match self {
+            Common::HEALTH => b"HT".to_vec(),
+            Common::E => b"E".to_vec(),
+        }
+    }
+}
+
+impl From<&[u8]> for Common {
+    fn from(m: &[u8]) -> Common {
+        match m {
+            b"HT" => Common::HEALTH,
+            _ => Common::E,
+        }
+    }
+}
+
 #[allow(non_camel_case_types)]
 #[derive(PartialEq, Debug)]
 pub enum ToNode {
     PUB_KEY, // Send a public key
-    HEALTH,  // Healcheck method
-    E,       // Invalid method
+    E,       // Invalid metod
 }
 
 impl Into<Vec<u8>> for ToNode {
     fn into(self) -> Vec<u8> {
         match self {
             ToNode::PUB_KEY => b"PK".to_vec(),
-            ToNode::HEALTH => b"HT".to_vec(),
             _ => b"E".to_vec(),
         }
     }
@@ -23,7 +45,6 @@ impl From<&[u8]> for ToNode {
     fn from(m: &[u8]) -> ToNode {
         match m {
             b"PK" => ToNode::PUB_KEY,
-            b"HT" => ToNode::HEALTH,
             _ => ToNode::E,
         }
     }

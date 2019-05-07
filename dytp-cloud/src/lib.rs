@@ -4,6 +4,8 @@ pub mod manager;
 use crate::error::Result;
 use crate::manager::Manager;
 use chrono::prelude::*;
+use clap::crate_version;
+use dytp_component::health_resp_cloud::HealthRespCloud;
 use dytp_component::node_state::NodeState;
 use dytp_connection::prelude::*;
 use dytp_future::get_node_health::GetNodeHealth;
@@ -127,6 +129,22 @@ fn join(
     Box::new(f)
 }
 
+fn health(
+    manager: Box<Manager + Send>,
+    mut origin: Origin,
+) -> Box<Future<Item = (), Error = Error> + Send> {
+    let f = manager.list(false).map_err(|e| e.into()).map(move |nodes| {
+        let res: Vec<u8> = HealthRespCloud::new(crate_version!(), &nodes).into();
+
+        origin.write(&res).unwrap();
+        origin.flush().unwrap();
+
+        ()
+    });
+
+    Box::new(f)
+}
+
 fn process(socket: TcpStream, manager: Box<Manager + Send>, read_timeout: u64) {
     let origin = Origin::new_with_timeout(socket, read_timeout);
     let f = origin
@@ -135,6 +153,16 @@ fn process(socket: TcpStream, manager: Box<Manager + Send>, read_timeout: u64) {
         .and_then(move |(buf, origin)| {
             if let Some(buf) = buf {
                 use std::ops::Deref;
+
+                // TODO:
+                // Couldn't execute below since it's DYTP protocol
+                //
+                // match plain::Common::from(buf.deref()) {
+                //     plain::Common::HEALTH => {
+                //         return health(manager, origin);
+                //     }
+                //     _ => {}
+                // }
 
                 match plain::ToCloud::from(buf.deref()) {
                     plain::ToCloud::SYNC { ts } => {

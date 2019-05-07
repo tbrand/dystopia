@@ -9,6 +9,7 @@ dytp-component = { path = "../dytp-component" }
 dytp-connection = { path = "../dytp-connection" }
 dytp-future = { path = "../dytp-future" }
 dytp-protocol = { path = "../dytp-protocol" }
+clap = "*"
 tokio = "*"
 bytes = "*"
 futures = "*"

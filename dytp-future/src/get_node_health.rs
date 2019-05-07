@@ -16,7 +16,7 @@ pub struct GetNodeHealth {
 impl GetNodeHealth {
     pub fn new(node_addr: SocketAddr) -> Result<GetNodeHealth> {
         let mut upstream = Upstream::new(node_addr.clone())?;
-        let buf: Vec<u8> = plain::ToNode::HEALTH.into();
+        let buf: Vec<u8> = plain::Common::HEALTH.into();
 
         upstream.write(&buf)?;
         upstream.flush()?;
