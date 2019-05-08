@@ -5,6 +5,7 @@ authors = ["taicsuzu <taichiro0709@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+dytp-component = { path = "../dytp-component" }
 env_logger = "*"
 failure = "*"
 log = "*"

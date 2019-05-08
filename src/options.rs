@@ -1,10 +1,16 @@
-pub fn address<'a, 'b>(default: &'a str) -> clap::Arg<'a, 'b> {
-    clap::Arg::with_name("address")
+pub fn address<'a, 'b>(default: Option<&'a str>) -> clap::Arg<'a, 'b> {
+    let mut arg = clap::Arg::with_name("address")
         .long("address")
         .short("a")
-        .default_value(default)
-        .help("Binded address (specified by `host:port`).")
+        .help("Binded address for each component. Target address for cli. (specified by `host:port`).")
         .takes_value(true)
+        .required(true);
+
+    if let Some(default) = default {
+        arg = arg.default_value(default)
+    }
+
+    arg
 }
 
 pub fn cloud<'a, 'b>() -> clap::Arg<'a, 'b> {
@@ -55,4 +61,23 @@ pub fn read_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
         .default_value("10")
         .help("Read timeout as secs.")
         .takes_value(true)
+}
+
+pub fn method<'a, 'b>() -> clap::Arg<'a, 'b> {
+    clap::Arg::with_name("method")
+        .long("method")
+        .short("m")
+        .default_value("health")
+        .help("Method name to be executed in command line. \"method\" is only supported for now.")
+        .takes_value(true)
+        .required(true)
+}
+
+pub fn component<'a, 'b>() -> clap::Arg<'a, 'b> {
+    clap::Arg::with_name("component")
+        .long("component")
+        .default_value("cloud")
+        .help("A target component. One of \"cloud\", \"gateway\" or \"node\"")
+        .takes_value(true)
+        .required(true)
 }

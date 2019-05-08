@@ -15,10 +15,13 @@ use dytp::node;
 #[cfg(any(feature = "cloud", feature = "all"))]
 use dytp::cloud;
 
+#[cfg(any(feature = "cli", feature = "all"))]
+use dytp::cli;
+
 fn subcommand_gateway<'a, 'b>() -> clap::App<'a, 'b> {
     clap::SubCommand::with_name("gateway")
         .about("A gateway into Dystopia")
-        .arg(options::address("127.0.0.1:2888"))
+        .arg(options::address(Some("127.0.0.1:2888")))
         .arg(options::cloud())
         .arg(options::hops())
         .arg(options::read_timeout())
@@ -27,7 +30,7 @@ fn subcommand_gateway<'a, 'b>() -> clap::App<'a, 'b> {
 fn subcommand_node<'a, 'b>() -> clap::App<'a, 'b> {
     clap::SubCommand::with_name("node")
         .about("A node of Dystopia")
-        .arg(options::address("127.0.0.1:3000"))
+        .arg(options::address(Some("127.0.0.1:3000")))
         .arg(options::global_address())
         .arg(options::cloud())
         .arg(options::read_timeout())
@@ -36,10 +39,18 @@ fn subcommand_node<'a, 'b>() -> clap::App<'a, 'b> {
 fn subcommand_cloud<'a, 'b>() -> clap::App<'a, 'b> {
     clap::SubCommand::with_name("cloud")
         .about("A cloud of Dystopia")
-        .arg(options::address("127.0.0.1:2777"))
+        .arg(options::address(Some("127.0.0.1:2777")))
         .arg(options::healthcheck_interval())
         .arg(options::node_deletion_timeout())
         .arg(options::read_timeout())
+}
+
+fn subcommand_cli<'a, 'b>() -> clap::App<'a, 'b> {
+    clap::SubCommand::with_name("cli")
+        .about("Command line execution")
+        .arg(options::address(None))
+        .arg(options::component())
+        .arg(options::method())
 }
 
 #[cfg(any(feature = "gateway", feature = "all"))]
@@ -117,6 +128,25 @@ fn exec_cloud(_maches: &clap::ArgMatches) -> Result<()> {
     Ok(())
 }
 
+#[cfg(any(feature = "cli", feature = "all"))]
+fn exec_cli(matches: &clap::ArgMatches) -> Result<()> {
+    let matches = matches.subcommand_matches("cli").unwrap();
+    let addr = matches.value_of("address").unwrap().parse()?;
+    let component = matches.value_of("component").unwrap();
+    let method = matches.value_of("method").unwrap();
+
+    cli::main_inner(addr, component, method)?;
+
+    Ok(())
+}
+
+#[cfg(not(any(feature = "cli", feature = "all")))]
+fn exec_cli(_matches: &clap::ArgMatches) -> Result<()> {
+    log::error!("subcommand `cli` is not installed in this binary.");
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
     openssl_probe::init_ssl_cert_env_vars();
 
@@ -132,12 +162,14 @@ fn main() -> Result<()> {
         .subcommand(subcommand_gateway())
         .subcommand(subcommand_node())
         .subcommand(subcommand_cloud())
+        .subcommand(subcommand_cli())
         .get_matches();
 
     match matches.subcommand_name() {
         Some("gateway") => exec_gateway(&matches),
         Some("node") => exec_node(&matches),
         Some("cloud") => exec_cloud(&matches),
+        Some("cli") => exec_cli(&matches),
         Some(e) => {
             log::error!("unknown subcommand {:?}.", e);
 

@@ -34,7 +34,7 @@ members = [
 
 [features]
 default = []
-all = ["dytp-cli", "dytp-gateway", "dytp-node", "dytp-cloud"]
+all = ["dytp-gateway", "dytp-node", "dytp-cloud", "dytp-cli"]
 gateway = ["dytp-gateway"]
 node = ["dytp-node"]
 cloud = ["dytp-cloud"]
