@@ -23,13 +23,6 @@ pub enum RequestContext {
     Common(plain::Common),
 }
 
-// #[derive(Debug)]
-// pub struct RequestContext {
-//     pub tls: bool,
-//     pub buf: Vec<u8>,
-//     pub ip: SocketAddr,
-// }
-
 fn ip(req: &httparse::Request, port: u16) -> Result<IpAddr> {
     if req.path.is_none() {
         return Err(RequestError::PathNotFound.into());

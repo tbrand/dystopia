@@ -9,11 +9,15 @@ use crate::rely::Rely;
 use crate::route::{GetAllNodes, GetRoute, RegisterNode, RegisterNodes, RemoveNode};
 use crate::route_node::RouteNode;
 use crate::ts::{LatestTs, RecordTs};
+use clap::crate_version;
+use dytp_component::health_resp_gateway::HealthRespGateway;
 use dytp_component::node_state::NodeState;
 use dytp_connection::prelude::*;
 use dytp_future::fetch_nodes::FetchNodes;
 use dytp_future::get_pub_key::GetPubKey;
 use dytp_future::sync_audit::SyncAudit;
+use dytp_protocol::delim::Delim;
+use dytp_protocol::method::plain;
 use failure::Error;
 use futures::future::{join_all, Either};
 use std::net::SocketAddr;
@@ -29,6 +33,23 @@ fn ignore() -> ProcessFuture {
     Box::new(future::ok(()))
 }
 
+fn health(request: Request) -> ProcessFuture {
+    let f = GetAllNodes::new().map_err(|e| e.into()).map(|nodes| {
+        let res: Vec<u8> = HealthRespGateway::new(crate_version!(), &nodes).into();
+
+        let mut origin = Origin::new(request.stream());
+
+        origin.set_write_delim(Delim::Http);
+        origin.set_read_delim(Delim::Http);
+        origin.write(&res).unwrap();
+        origin.flush().unwrap();
+
+        ()
+    });
+
+    Box::new(f)
+}
+
 fn process(socket: TcpStream, hops: usize, read_timeout: u64) {
     log::debug!("received new request");
 
@@ -39,9 +60,12 @@ fn process(socket: TcpStream, hops: usize, read_timeout: u64) {
         .and_then(move |(ctx, req)| {
             if let Some(ctx) = ctx {
                 match ctx {
-                    RequestContext::Common(common) => {
-                        return Box::new(future::ok(())) as ProcessFuture;
-                    }
+                    RequestContext::Common(common) => match common {
+                        plain::Common::HEALTH => {
+                            return health(req);
+                        }
+                        _ => {}
+                    },
                     RequestContext::Http { tls, buf, ip } => {
                         let route = GetRoute::new(hops);
 

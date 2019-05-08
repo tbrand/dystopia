@@ -154,15 +154,12 @@ fn process(socket: TcpStream, manager: Box<Manager + Send>, read_timeout: u64) {
             if let Some(buf) = buf {
                 use std::ops::Deref;
 
-                // TODO:
-                // Couldn't execute below since it's DYTP protocol
-                //
-                // match plain::Common::from(buf.deref()) {
-                //     plain::Common::HEALTH => {
-                //         return health(manager, origin);
-                //     }
-                //     _ => {}
-                // }
+                match plain::Common::from(buf.deref()) {
+                    plain::Common::HEALTH => {
+                        return health(manager, origin);
+                    }
+                    _ => {}
+                }
 
                 match plain::ToCloud::from(buf.deref()) {
                     plain::ToCloud::SYNC { ts } => {

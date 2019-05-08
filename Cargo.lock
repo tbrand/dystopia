@@ -276,6 +276,7 @@ name = "dytp-gateway"
 version = "0.1.0"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dytp-component 0.1.0",
  "dytp-connection 0.1.0",
  "dytp-future 0.1.0",
