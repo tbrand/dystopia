@@ -2,9 +2,10 @@ use crate::node_state::NodeState;
 use crate::schema::nodes;
 use diesel::deserialize::Queryable;
 use semver::Version;
+use serde_derive::Serialize;
 use std::net::SocketAddr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Node {
     pub addr: SocketAddr,
     pub state: NodeState,

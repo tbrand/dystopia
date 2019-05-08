@@ -8,7 +8,7 @@ use clap::crate_version;
 use dytp_component::health_resp_cloud::HealthRespCloud;
 use dytp_component::node_state::NodeState;
 use dytp_connection::prelude::*;
-use dytp_future::get_node_health::GetNodeHealth;
+use dytp_future::get_health_node::GetHealthNode;
 use dytp_future::get_pub_key::GetPubKey;
 use dytp_protocol::method::plain;
 use failure::Error;
@@ -193,7 +193,7 @@ fn healthcheck(manager: Box<Manager + Send>, node_deletion_timeout: u64) {
 
                 match node.state {
                     NodeState::ACTIVE => {
-                        if let Ok(g) = GetNodeHealth::new(node.addr.clone()) {
+                        if let Ok(g) = GetHealthNode::new(node.addr.clone()) {
                             let f = g
                                 .map_err(move |e| {
                                     log::error!("health check error={:?}", e);

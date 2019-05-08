@@ -77,7 +77,14 @@ pub fn component<'a, 'b>() -> clap::Arg<'a, 'b> {
     clap::Arg::with_name("component")
         .long("component")
         .default_value("cloud")
-        .help("A target component. One of \"cloud\", \"gateway\" or \"node\"")
+        .help("A target component. One of \"cloud\", \"gateway\" or \"node\".")
         .takes_value(true)
         .required(true)
+}
+
+pub fn pretty<'a, 'b>() -> clap::Arg<'a, 'b> {
+    clap::Arg::with_name("pretty")
+        .long("pretty")
+        .help("Pretty print json output.")
+        .takes_value(false)
 }

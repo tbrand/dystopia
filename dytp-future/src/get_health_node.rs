@@ -8,27 +8,27 @@ use std::net::SocketAddr;
 use tokio::prelude::*;
 
 #[derive(Debug)]
-pub struct GetNodeHealth {
+pub struct GetHealthNode {
     pub addr: SocketAddr,
     upstream: Upstream,
 }
 
-impl GetNodeHealth {
-    pub fn new(node_addr: SocketAddr) -> Result<GetNodeHealth> {
+impl GetHealthNode {
+    pub fn new(node_addr: SocketAddr) -> Result<GetHealthNode> {
         let mut upstream = Upstream::new(node_addr.clone())?;
         let buf: Vec<u8> = plain::Common::HEALTH.into();
 
         upstream.write(&buf)?;
         upstream.flush()?;
 
-        Ok(GetNodeHealth {
+        Ok(GetHealthNode {
             addr: node_addr,
             upstream,
         })
     }
 }
 
-impl Future for GetNodeHealth {
+impl Future for GetHealthNode {
     type Item = Option<HealthRespNode>;
     type Error = Error;
 

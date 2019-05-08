@@ -51,6 +51,7 @@ fn subcommand_cli<'a, 'b>() -> clap::App<'a, 'b> {
         .arg(options::address(None))
         .arg(options::component())
         .arg(options::method())
+        .arg(options::pretty())
 }
 
 #[cfg(any(feature = "gateway", feature = "all"))]
@@ -134,8 +135,9 @@ fn exec_cli(matches: &clap::ArgMatches) -> Result<()> {
     let addr = matches.value_of("address").unwrap().parse()?;
     let component = matches.value_of("component").unwrap();
     let method = matches.value_of("method").unwrap();
+    let pretty = matches.is_present("pretty");
 
-    cli::main_inner(addr, component, method)?;
+    cli::main_inner(addr, component, method, pretty)?;
 
     Ok(())
 }

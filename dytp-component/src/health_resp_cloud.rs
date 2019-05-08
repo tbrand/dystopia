@@ -1,39 +1,37 @@
 use crate::node::Node;
 use semver::Version;
+use serde_derive::Serialize;
 
 // TODO:
 // May be it's too heavy to return every nodes every times.
 // We need pagination or other logics to limit number of return nodes.
-#[derive(Debug)]
-pub enum HealthRespCloud {
-    Ok((Version, Vec<Node>)),
-    E,
+#[derive(Debug, Serialize)]
+pub struct HealthRespCloud {
+    version: Version,
+    nodes: Vec<Node>,
 }
 
 impl HealthRespCloud {
     pub fn new(version: &str, nodes: &[Node]) -> HealthRespCloud {
-        match Version::parse(version) {
-            Ok(v) => HealthRespCloud::Ok((v, nodes.to_owned())),
-            Err(_) => HealthRespCloud::E,
+        HealthRespCloud {
+            version: Version::parse(version).unwrap(),
+            nodes: nodes.to_owned(),
         }
     }
 }
 
 impl Into<Vec<u8>> for HealthRespCloud {
     fn into(self) -> Vec<u8> {
-        match self {
-            HealthRespCloud::Ok((version, nodes)) => format!(
-                "{} {}",
-                version,
-                nodes
-                    .iter()
-                    .map(|n| format!("{}", n))
-                    .collect::<Vec<String>>()
-                    .join(" ")
-            )
-            .into_bytes(),
-            HealthRespCloud::E => "E".as_bytes().to_owned(),
-        }
+        format!(
+            "{} {}",
+            self.version,
+            self.nodes
+                .iter()
+                .map(|n| format!("{}", n))
+                .collect::<Vec<String>>()
+                .join(" ")
+        )
+        .into_bytes()
     }
 }
 
@@ -45,7 +43,9 @@ impl From<&[u8]> for HealthRespCloud {
             .collect::<Vec<&str>>();
 
         if version_nodes.len() % 3 != 1 {
-            return HealthRespCloud::E;
+            log::error!("invalid response={:?}", version_nodes);
+
+            panic!();
         }
 
         let version = version_nodes[0].parse().unwrap();
@@ -64,6 +64,6 @@ impl From<&[u8]> for HealthRespCloud {
             });
         }
 
-        HealthRespCloud::Ok((version, nodes))
+        HealthRespCloud { version, nodes }
     }
 }

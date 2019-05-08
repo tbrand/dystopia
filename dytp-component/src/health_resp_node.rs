@@ -1,26 +1,22 @@
 use semver::Version;
+use serde_derive::Serialize;
 
-#[derive(Debug)]
-pub enum HealthRespNode {
-    Ok(Version), // Response including version
-    E,           // Invalid response
+#[derive(Debug, Serialize)]
+pub struct HealthRespNode {
+    version: Version, // Response including version
 }
 
 impl HealthRespNode {
     pub fn new(version: &str) -> HealthRespNode {
-        match Version::parse(version) {
-            Ok(v) => HealthRespNode::Ok(v),
-            Err(_) => HealthRespNode::E,
+        HealthRespNode {
+            version: Version::parse(version).unwrap(),
         }
     }
 }
 
 impl Into<Vec<u8>> for HealthRespNode {
     fn into(self) -> Vec<u8> {
-        match self {
-            HealthRespNode::Ok(v) => format!("OK {}", v).into_bytes(),
-            HealthRespNode::E => "E".as_bytes().to_owned(),
-        }
+        format!("OK {}", self.version).into_bytes()
     }
 }
 
@@ -30,10 +26,10 @@ impl From<&[u8]> for HealthRespNode {
 
         for cap in re.captures_iter(std::str::from_utf8(m).unwrap()) {
             if let Ok(v) = cap[1].parse() {
-                return HealthRespNode::Ok(v);
+                return HealthRespNode { version: v };
             }
         }
 
-        HealthRespNode::E
+        unreachable!();
     }
 }

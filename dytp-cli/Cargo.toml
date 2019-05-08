@@ -6,6 +6,11 @@ edition = "2018"
 
 [dependencies]
 dytp-component = { path = "../dytp-component" }
+dytp-future = { path = "../dytp-future" }
 env_logger = "*"
 failure = "*"
+futures = "*"
 log = "*"
+tokio = "*"
+serde = "*"
+serde_json = "*"

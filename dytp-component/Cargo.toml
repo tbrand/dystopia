@@ -7,5 +7,8 @@ edition = "2018"
 [dependencies]
 failure = "*"
 regex = "*"
-semver = "*"
+semver = { version = "*", features = ["serde"] }
 diesel = { version = "*", features = ["postgres"] }
+serde = "*"
+serde_derive = "*"
+log = "*"
