@@ -5,6 +5,7 @@ authors = ["taicsuzu <taichiro0709@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+dytp-cli = { path = "dytp-cli", optional = true }
 dytp-cloud = { path = "dytp-cloud", optional = true }
 dytp-component = { path = "dytp-component" }
 dytp-connection = { path = "dytp-connection" }
@@ -21,6 +22,7 @@ openssl-probe = "*"
 
 [workspace]
 members = [
+  "dytp-cli",
   "dytp-cloud",
   "dytp-component",
   "dytp-connection",
@@ -32,7 +34,8 @@ members = [
 
 [features]
 default = []
-all = ["dytp-gateway", "dytp-node", "dytp-cloud"]
+all = ["dytp-cli", "dytp-gateway", "dytp-node", "dytp-cloud"]
 gateway = ["dytp-gateway"]
 node = ["dytp-node"]
 cloud = ["dytp-cloud"]
+cli = ["dytp-cli"]
