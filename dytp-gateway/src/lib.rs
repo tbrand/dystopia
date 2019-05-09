@@ -9,11 +9,15 @@ use crate::rely::Rely;
 use crate::route::{GetAllNodes, GetRoute, RegisterNode, RegisterNodes, RemoveNode};
 use crate::route_node::RouteNode;
 use crate::ts::{LatestTs, RecordTs};
+use clap::crate_version;
+use dytp_component::health_resp_gateway::HealthRespGateway;
 use dytp_component::node_state::NodeState;
 use dytp_connection::prelude::*;
 use dytp_future::fetch_nodes::FetchNodes;
 use dytp_future::get_pub_key::GetPubKey;
 use dytp_future::sync_audit::SyncAudit;
+use dytp_protocol::delim::Delim;
+use dytp_protocol::method::plain;
 use failure::Error;
 use futures::future::{join_all, Either};
 use std::net::SocketAddr;
@@ -29,6 +33,23 @@ fn ignore() -> ProcessFuture {
     Box::new(future::ok(()))
 }
 
+fn health(request: Request) -> ProcessFuture {
+    let f = GetAllNodes::new().map_err(|e| e.into()).map(|nodes| {
+        let res: Vec<u8> = HealthRespGateway::new(crate_version!(), &nodes).into();
+
+        let mut origin = Origin::new(request.stream());
+
+        origin.set_write_delim(Delim::Http);
+        origin.set_read_delim(Delim::Http);
+        origin.write(&res).unwrap();
+        origin.flush().unwrap();
+
+        ()
+    });
+
+    Box::new(f)
+}
+
 fn process(socket: TcpStream, hops: usize, read_timeout: u64) {
     log::debug!("received new request");
 
@@ -38,54 +59,74 @@ fn process(socket: TcpStream, hops: usize, read_timeout: u64) {
         .map_err(|(e, _)| e)
         .and_then(move |(ctx, req)| {
             if let Some(ctx) = ctx {
-                let route = GetRoute::new(hops);
-
-                log::debug!("decided the route.");
-
-                let f = route.and_then(move |nodes| {
-                    if let Some(nodes) = nodes {
-                        let get_pub_keys = nodes
-                            .iter()
-                            .map(|n| GetPubKey::new(*n))
-                            .collect::<Vec<Result<GetPubKey>>>();
-
-                        if get_pub_keys.iter().any(|g| g.is_err()) {
-                            return ignore();
+                match ctx {
+                    RequestContext::Common(common) => match common {
+                        plain::Common::HEALTH => {
+                            return health(req);
                         }
+                        _ => {}
+                    },
+                    RequestContext::Http { tls, buf, ip } => {
+                        let route = GetRoute::new(hops);
 
-                        let rsa_keys = get_pub_keys
-                            .into_iter()
-                            .map(|g| g.unwrap())
-                            .collect::<Vec<GetPubKey>>();
+                        log::debug!("decided the route.");
 
-                        let f = join_all(rsa_keys).and_then(move |rsa_keys| {
-                            if rsa_keys.iter().any(|r| r.is_none()) {
-                                return ignore();
-                            }
+                        let f = route.and_then(move |nodes| {
+                            if let Some(nodes) = nodes {
+                                let get_pub_keys = nodes
+                                    .iter()
+                                    .map(|n| GetPubKey::new(*n))
+                                    .collect::<Vec<Result<GetPubKey>>>();
 
-                            log::debug!("received public keys.");
-
-                            let route_nodes: Vec<RouteNode> = rsa_keys
-                                .into_iter()
-                                .enumerate()
-                                .map(|(idx, r)| {
-                                    if idx < nodes.len() - 1 {
-                                        RouteNode::new(nodes[idx], nodes[idx + 1], r.unwrap())
-                                    } else {
-                                        RouteNode::new(nodes[idx], ctx.ip, r.unwrap())
-                                    }
-                                })
-                                .collect();
-
-                            let origin = Origin::new_with_timeout(req.stream(), read_timeout);
-
-                            if let Ok(upstream) = Upstream::new_with_timeout(nodes[0], read_timeout)
-                            {
-                                if let Ok(rely) =
-                                    Rely::new(origin, upstream, route_nodes, &ctx.buf, ctx.tls)
-                                {
-                                    return Box::new(rely) as ProcessFuture;
+                                if get_pub_keys.iter().any(|g| g.is_err()) {
+                                    return ignore();
                                 }
+
+                                let rsa_keys = get_pub_keys
+                                    .into_iter()
+                                    .map(|g| g.unwrap())
+                                    .collect::<Vec<GetPubKey>>();
+
+                                let f = join_all(rsa_keys).and_then(move |rsa_keys| {
+                                    if rsa_keys.iter().any(|r| r.is_none()) {
+                                        return ignore();
+                                    }
+
+                                    log::debug!("received public keys.");
+
+                                    let route_nodes: Vec<RouteNode> = rsa_keys
+                                        .into_iter()
+                                        .enumerate()
+                                        .map(|(idx, r)| {
+                                            if idx < nodes.len() - 1 {
+                                                RouteNode::new(
+                                                    nodes[idx],
+                                                    nodes[idx + 1],
+                                                    r.unwrap(),
+                                                )
+                                            } else {
+                                                RouteNode::new(nodes[idx], ip, r.unwrap())
+                                            }
+                                        })
+                                        .collect();
+
+                                    let origin =
+                                        Origin::new_with_timeout(req.stream(), read_timeout);
+
+                                    if let Ok(upstream) =
+                                        Upstream::new_with_timeout(nodes[0], read_timeout)
+                                    {
+                                        if let Ok(rely) =
+                                            Rely::new(origin, upstream, route_nodes, &buf, tls)
+                                        {
+                                            return Box::new(rely) as ProcessFuture;
+                                        }
+                                    }
+
+                                    ignore()
+                                });
+
+                                return Box::new(f) as ProcessFuture;
                             }
 
                             ignore()
@@ -93,11 +134,7 @@ fn process(socket: TcpStream, hops: usize, read_timeout: u64) {
 
                         return Box::new(f) as ProcessFuture;
                     }
-
-                    ignore()
-                });
-
-                return Box::new(f) as ProcessFuture;
+                }
             }
 
             ignore()

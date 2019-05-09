@@ -1,5 +1,5 @@
 use crate::error::Result;
-use dytp_component::health_resp::HealthResp;
+use dytp_component::health_resp_node::HealthRespNode;
 use dytp_connection::prelude::*;
 use dytp_protocol::method::plain;
 use failure::Error;
@@ -8,34 +8,34 @@ use std::net::SocketAddr;
 use tokio::prelude::*;
 
 #[derive(Debug)]
-pub struct GetNodeHealth {
+pub struct GetHealthNode {
     pub addr: SocketAddr,
     upstream: Upstream,
 }
 
-impl GetNodeHealth {
-    pub fn new(node_addr: SocketAddr) -> Result<GetNodeHealth> {
+impl GetHealthNode {
+    pub fn new(node_addr: SocketAddr) -> Result<GetHealthNode> {
         let mut upstream = Upstream::new(node_addr.clone())?;
-        let buf: Vec<u8> = plain::ToNode::HEALTH.into();
+        let buf: Vec<u8> = plain::Common::HEALTH.into();
 
         upstream.write(&buf)?;
         upstream.flush()?;
 
-        Ok(GetNodeHealth {
+        Ok(GetHealthNode {
             addr: node_addr,
             upstream,
         })
     }
 }
 
-impl Future for GetNodeHealth {
-    type Item = Option<HealthResp>;
+impl Future for GetHealthNode {
+    type Item = Option<HealthRespNode>;
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         match self.upstream.poll() {
             Ok(Async::Ready(Some(payload))) => {
-                let health = HealthResp::from(&payload as &[u8]);
+                let health = HealthRespNode::from(&payload as &[u8]);
 
                 return Ok(Async::Ready(Some(health)));
             }

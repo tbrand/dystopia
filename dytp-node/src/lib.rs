@@ -34,12 +34,16 @@ fn process(socket: TcpStream, state: Arc<RwLock<State>>, read_timeout: u64) {
             if let Some(buf) = buf {
                 use std::ops::Deref;
 
+                match plain::Common::from(buf.deref()) {
+                    plain::Common::HEALTH => {
+                        return Box::new(Health::new(origin)) as ProcessFuture;
+                    }
+                    _ => {}
+                }
+
                 match plain::ToNode::from(buf.deref()) {
                     plain::ToNode::PUB_KEY => {
                         return Box::new(PubKey::new(state.clone(), origin)) as ProcessFuture;
-                    }
-                    plain::ToNode::HEALTH => {
-                        return Box::new(Health::new(origin)) as ProcessFuture;
                     }
                     _ => {}
                 }

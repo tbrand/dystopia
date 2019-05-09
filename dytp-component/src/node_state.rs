@@ -1,8 +1,9 @@
 use crate::error::{NodeStateError, Result};
 use failure::Error;
+use serde_derive::Serialize;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum NodeState {
     ACTIVE,
     PENDING_DELETE,

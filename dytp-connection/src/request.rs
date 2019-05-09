@@ -2,6 +2,7 @@ use crate::error::{RequestError, Result};
 use crate::Connection;
 use bytes::BytesMut;
 use dytp_protocol::delim::Delim;
+use dytp_protocol::method::plain;
 use failure::Error;
 use futures::prelude::*;
 use futures::try_ready;
@@ -13,10 +14,13 @@ use tokio::net::TcpStream;
 use tokio::prelude::*;
 
 #[derive(Debug)]
-pub struct RequestContext {
-    pub tls: bool,
-    pub buf: Vec<u8>,
-    pub ip: SocketAddr,
+pub enum RequestContext {
+    Http {
+        tls: bool,
+        buf: Vec<u8>,
+        ip: SocketAddr,
+    },
+    Common(plain::Common),
 }
 
 fn ip(req: &httparse::Request, port: u16) -> Result<IpAddr> {
@@ -112,13 +116,13 @@ pub fn parse(buf: &[u8]) -> Result<Option<RequestContext>> {
     let tls = tls(&req);
     log::debug!("tls={:?}", tls);
 
-    let request = RequestContext {
+    let http = RequestContext::Http {
         tls,
         buf: buf.to_owned(),
         ip: format!("{}:{}", ip, port).parse().unwrap(),
     };
 
-    Ok(Some(request))
+    Ok(Some(http))
 }
 
 #[derive(Debug)]
@@ -131,6 +135,7 @@ pub struct Request {
     write_delim: Delim,
     read_timeout: Duration,
     read_since: Option<Instant>,
+    parse_plain_metohd: bool,
 }
 
 impl Connection for Request {
@@ -206,6 +211,7 @@ impl Request {
             write_delim: Delim::Http,
             read_timeout: Duration::from_secs(5),
             read_since: None,
+            parse_plain_metohd: false,
         }
     }
 
@@ -219,6 +225,7 @@ impl Request {
             write_delim: Delim::Http,
             read_timeout: Duration::from_secs(read_timeout),
             read_since: None,
+            parse_plain_metohd: false,
         }
     }
 
@@ -256,6 +263,16 @@ impl Stream for Request {
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         match try_ready!(self.try_read()) {
             Some(payload) => {
+                if !self.parse_plain_metohd {
+                    let common = plain::Common::from(&payload as &[u8]);
+
+                    if common != plain::Common::E {
+                        return Ok(Async::Ready(Some(RequestContext::Common(common))));
+                    }
+
+                    self.parse_plain_metohd = true;
+                }
+
                 self.http_buf.extend_from_slice(&payload);
                 self.http_buf.extend_from_slice(b"\r\n");
 

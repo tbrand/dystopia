@@ -12,3 +12,6 @@ pub use dytp_node as node;
 
 #[cfg(any(feature = "cloud", feature = "all"))]
 pub use dytp_cloud as cloud;
+
+#[cfg(any(feature = "cli", feature = "all"))]
+pub use dytp_cli as cli;
