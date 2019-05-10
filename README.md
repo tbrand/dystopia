@@ -17,12 +17,14 @@
 </p>
 
 <p align="center">
-  <i>Real Anonymity on the Internet</i>
+  <i>Anonymity on the Internet by Transparent way</i>
 </p>
 
-Dystopia aims to realize real anonymity on the internet world by a transparent way.
+Dystopia aims to realize anonymity on the internet world by a transparent way.
 It implements onion routing with original protocols inspired by [Tor](https://www.torproject.org/).
 You can quickly enter the anonymous internet by the below.
+
+**The gatway sometimes be down since there are many attacks currently. We struggle to solve it now. You could construct the Dystopia's network easily by using docker. See [here](https://github.com/tbrand/dystopia/wiki/Getting-Started) for details.**
 
 ```bash
 curl https://google.com -x 54.95.171.65:2888 -L
@@ -51,5 +53,5 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 - [Testing](https://github.com/tbrand/dystopia/wiki/Testing)
 
 ## Appreciate your contributions!
-- We need more nodes to acquire real anonymity. Please [Joining to our public cloud](https://github.com/tbrand/dystopia/wiki/Joining-to-our-public-cloud) if you have any idle computing resources.
+- We need more nodes to acquire anonymity. Please [Joining to our public cloud](https://github.com/tbrand/dystopia/wiki/Joining-to-our-public-cloud) if you have any idle computing resources.
 - We need to implemenet more to make the protduct robust and fast. Send pull requests or opening issues when you have proposals.
