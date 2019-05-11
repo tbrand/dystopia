@@ -22,16 +22,20 @@ impl HealthRespGateway {
 
 impl Into<Vec<u8>> for HealthRespGateway {
     fn into(self) -> Vec<u8> {
-        format!(
-            "{} {}",
-            self.version,
-            self.nodes
-                .iter()
-                .map(|n| format!("{}", n))
-                .collect::<Vec<String>>()
-                .join(" ")
-        )
-        .into_bytes()
+        if self.nodes.len() > 0 {
+            format!(
+                "{} {}",
+                self.version,
+                self.nodes
+                    .iter()
+                    .map(|n| format!("{}", n))
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            )
+            .into_bytes()
+        } else {
+            format!("{}", self.version).into_bytes()
+        }
     }
 }
 
