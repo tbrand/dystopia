@@ -191,6 +191,10 @@ impl Future for Upstream {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        if self.read_since().is_none() {
+            *self.read_since_mut() = Some(Instant::now());
+        }
+
         let disconnected = self.fill()?.is_ready();
 
         if !self.rb.is_empty() && self.parse_http {
@@ -201,6 +205,8 @@ impl Future for Upstream {
 
         if !self.rb.is_empty() {
             if let Some(payload) = self.try_read_delim() {
+                *self.read_since_mut() = None;
+
                 return Ok(Async::Ready(Some(payload)));
             }
         }
@@ -208,6 +214,14 @@ impl Future for Upstream {
         if disconnected {
             Ok(Async::Ready(None))
         } else {
+            if Instant::now().duration_since(*self.read_since().as_ref().unwrap())
+                > *self.read_timeout()
+            {
+                log::debug!("read timeout");
+
+                return Ok(Async::Ready(None));
+            }
+
             task::current().notify();
 
             Ok(Async::NotReady)
