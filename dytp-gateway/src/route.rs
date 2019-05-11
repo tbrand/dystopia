@@ -163,9 +163,9 @@ impl Future for RemoveNode {
                 .map(|(idx, _)| idx)
             {
                 ns.remove(idx);
-
-                return Ok(Async::Ready(()));
             }
+
+            return Ok(Async::Ready(()));
         }
 
         task::current().notify();
