@@ -124,6 +124,8 @@ impl Connection for Upstream {
                 }
                 Err(e) => return Err(e.into()),
             }
+
+            log::debug!("fill: loop");
         }
 
         Ok(Async::NotReady)

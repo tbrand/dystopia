@@ -276,6 +276,8 @@ impl Stream for Request {
                 self.http_buf.extend_from_slice(&payload);
                 self.http_buf.extend_from_slice(b"\r\n");
 
+                log::debug!("received={:?}", self.http_buf);
+
                 if let Some(context) = parse(&self.http_buf)? {
                     return Ok(Async::Ready(Some(context)));
                 }

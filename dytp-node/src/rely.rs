@@ -152,6 +152,10 @@ impl Future for Rely {
                     Handshake::Done => {
                         let decrypted = self.aes_decrypt(&payload);
 
+                        if self.hop == 0 {
+                            log::debug!("send to upstream={:?}", decrypted);
+                        }
+
                         self.proxy(&decrypted)?;
                     }
                 }

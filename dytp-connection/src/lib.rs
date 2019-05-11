@@ -102,6 +102,8 @@ pub trait Connection {
 
             task::current().notify();
 
+            log::debug!("try_read: not ready");
+
             Ok(Async::NotReady)
         }
     }
