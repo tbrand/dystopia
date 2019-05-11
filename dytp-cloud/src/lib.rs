@@ -41,6 +41,8 @@ fn audit(
             audit
         });
 
+        log::debug!("audit={:?}", std::str::from_utf8(&buf));
+
         origin.write(&buf).unwrap();
         origin.flush().unwrap();
     });
@@ -163,9 +165,11 @@ fn process(socket: TcpStream, manager: Box<Manager + Send>, read_timeout: u64) {
 
                 match plain::ToCloud::from(buf.deref()) {
                     plain::ToCloud::SYNC { ts } => {
+                        log::debug!("sync request={}", ts);
                         return audit(manager, origin, ts);
                     }
                     plain::ToCloud::FETCH => {
+                        log::debug!("fetch request");
                         return list(manager, origin);
                     }
                     plain::ToCloud::JOIN { addr, version } => {
