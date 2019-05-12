@@ -24,7 +24,7 @@ Dystopia aims to realize anonymity on the internet world by a transparent way.
 It implements onion routing with original protocols inspired by [Tor](https://www.torproject.org/).
 You can quickly enter the anonymous internet by the below.
 
-**The gatway sometimes be down since there are many attacks currently. We struggle to solve it now. You could construct the Dystopia's network easily by using docker. See [here](https://github.com/tbrand/dystopia/wiki/Getting-Started) for details.**
+**The gatway sometimes be down since there are many attacks currently. We struggle to solve it now. You could construct the Dystopia's network easily. See [here](https://github.com/tbrand/dystopia/wiki/Getting-Started) for details.**
 
 ```bash
 curl https://google.com -x 54.95.171.65:2888 -L
