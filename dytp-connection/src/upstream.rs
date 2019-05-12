@@ -23,6 +23,10 @@ pub struct Upstream {
 }
 
 impl Upstream {
+    pub fn peer(&self) -> Result<std::net::SocketAddr> {
+        self.stream.peer_addr().map_err(|e| e.into())
+    }
+
     fn parse_http(&mut self) -> Poll<(), Error> {
         let mut headers = [httparse::EMPTY_HEADER; 32];
         let mut req = httparse::Response::new(&mut headers);

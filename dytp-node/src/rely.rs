@@ -39,6 +39,13 @@ impl Rely {
         hop: u8,
         tls: bool,
     ) -> Rely {
+        log::debug!(
+            "rely: hop={}, peer={}, tls={}",
+            hop,
+            upstream.peer().unwrap(),
+            tls
+        );
+
         origin.set_read_delim(Delim::Dytp);
         origin.set_write_delim(Delim::Dytp);
 
