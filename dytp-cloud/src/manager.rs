@@ -5,6 +5,7 @@ use crate::error::{DatabaseError, Result};
 use chrono::prelude::*;
 use dytp_component::audit::Audit;
 use dytp_component::node::Node;
+use dytp_component::node_state::NodeState;
 use failure::Error;
 use futures::prelude::*;
 use semver::Version;
@@ -37,6 +38,10 @@ pub trait Manager: ManagerClone {
         version: Version,
     ) -> Box<Future<Item = (), Error = Error> + Send>;
     fn list(&self, active_only: bool) -> Box<Future<Item = Vec<Node>, Error = Error> + Send>;
+    fn check(
+        &self,
+        addr: SocketAddr,
+    ) -> Box<Future<Item = Option<NodeState>, Error = Error> + Send>;
     fn sync(&self, ts: i64) -> Box<Future<Item = Vec<Audit>, Error = Error> + Send>;
     fn deleted_ts(&self, addr: SocketAddr) -> Box<Future<Item = i64, Error = Error> + Send>;
     fn latest_ts(&self) -> Box<Future<Item = i64, Error = Error> + Send>;

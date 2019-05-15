@@ -155,6 +155,28 @@ impl Manager for Pg {
         Box::new(futures::future::ok(audits))
     }
 
+    fn check(&self, a: SocketAddr) -> Box<Future<Item = Option<NodeState>, Error = Error> + Send> {
+        let conn = self.pool.clone().get().unwrap();
+        let mut audit = {
+            use dytp_component::schema::audits::dsl::*;
+
+            audits
+                .select(state)
+                .filter(addr.eq(format!("{}", a)))
+                .limit(1)
+                .load::<String>(&conn)
+                .unwrap()
+        };
+
+        if audit.len() == 0 {
+            Box::new(futures::future::ok(None))
+        } else {
+            Box::new(futures::future::ok(Some(
+                audit.pop().unwrap().parse().unwrap(),
+            )))
+        }
+    }
+
     fn deleted_ts(&self, a: SocketAddr) -> Box<Future<Item = i64, Error = Error> + Send> {
         let conn = self.pool.clone().get().unwrap();
         let audits = {

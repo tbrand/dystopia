@@ -1,3 +1,4 @@
+pub mod check;
 pub mod error;
 pub mod health;
 pub mod join;
