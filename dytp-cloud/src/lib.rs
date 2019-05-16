@@ -129,6 +129,26 @@ fn join(
     Box::new(f)
 }
 
+fn check(
+    manager: Box<Manager + Send>,
+    mut origin: Origin,
+    addr: SocketAddr,
+) -> Box<Future<Item = (), Error = Error> + Send> {
+    let f = manager.check(addr).map(move |state_opt| {
+        if let Some(state) = state_opt {
+            let buf = format!("{}", state).into_bytes();
+
+            origin.write(&buf).unwrap();
+            origin.flush().unwrap();
+        } else {
+            origin.write(b"E").unwrap();
+            origin.flush().unwrap();
+        }
+    });
+
+    Box::new(f)
+}
+
 fn health(
     manager: Box<Manager + Send>,
     mut origin: Origin,
@@ -170,6 +190,9 @@ fn process(socket: TcpStream, manager: Box<Manager + Send>, read_timeout: u64) {
                     }
                     plain::ToCloud::JOIN { addr, version } => {
                         return join(manager, origin, addr, version);
+                    }
+                    plain::ToCloud::CHECK { addr } => {
+                        return check(manager, origin, addr);
                     }
                     _ => {}
                 }

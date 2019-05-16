@@ -1,3 +1,4 @@
+pub mod check;
 pub mod delete;
 pub mod deleted_ts;
 pub mod join;
@@ -9,6 +10,7 @@ pub mod sync;
 use crate::manager::{Manager, ManagerClone};
 use dytp_component::audit::Audit;
 use dytp_component::node::Node;
+use dytp_component::node_state::NodeState;
 use failure::Error;
 use futures::prelude::*;
 use lazy_static::lazy_static;
@@ -53,6 +55,13 @@ impl Manager for Mem {
 
     fn list(&self, active_only: bool) -> Box<Future<Item = Vec<Node>, Error = Error> + Send> {
         Box::new(list::List::new(active_only))
+    }
+
+    fn check(
+        &self,
+        addr: SocketAddr,
+    ) -> Box<Future<Item = Option<NodeState>, Error = Error> + Send> {
+        Box::new(check::Check::new(addr))
     }
 
     fn sync(&self, ts: i64) -> Box<Future<Item = Vec<Audit>, Error = Error> + Send> {

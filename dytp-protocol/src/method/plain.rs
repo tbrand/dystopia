@@ -55,6 +55,7 @@ pub enum ToCloud {
     FETCH,                                       // Fetch a list of nodes
     SYNC { ts: i64 },                            // Sync audit logs with latest timestamp
     JOIN { addr: SocketAddr, version: Version }, // Joining request
+    CHECK { addr: SocketAddr },                  // Check current status of node
     E,                                           // Invalid method
 }
 
@@ -64,6 +65,7 @@ impl Into<Vec<u8>> for ToCloud {
             ToCloud::FETCH => b"FC".to_vec(),
             ToCloud::SYNC { ts } => format!("SY {}", ts).into_bytes(),
             ToCloud::JOIN { addr, version } => format!("JN {} {}", addr, version).into_bytes(),
+            ToCloud::CHECK { addr } => format!("CH {}", addr).into_bytes(),
             _ => b"E".to_vec(),
         }
     }
@@ -79,6 +81,14 @@ impl From<&[u8]> for ToCloud {
                 for cap in re_sync.captures_iter(std::str::from_utf8(m).unwrap()) {
                     if let Ok(ts) = cap[1].parse() {
                         return ToCloud::SYNC { ts };
+                    }
+                }
+
+                let re_check = regex::Regex::new(r"^CH\s(.+?)$").unwrap();
+
+                for cap in re_check.captures_iter(std::str::from_utf8(m).unwrap()) {
+                    if let Ok(addr) = cap[1].parse() {
+                        return ToCloud::CHECK { addr };
                     }
                 }
 
