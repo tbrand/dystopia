@@ -163,6 +163,7 @@ impl Manager for Pg {
             audits
                 .select(state)
                 .filter(addr.eq(format!("{}", a)))
+                .order_by(ts.desc())
                 .limit(1)
                 .load::<String>(&conn)
                 .unwrap()
