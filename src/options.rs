@@ -58,7 +58,7 @@ pub fn node_deletion_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
 pub fn read_timeout<'a, 'b>() -> clap::Arg<'a, 'b> {
     clap::Arg::with_name("read-timeout")
         .long("read-timeout")
-        .default_value("10")
+        .default_value("1")
         .help("Read timeout as secs.")
         .takes_value(true)
 }
