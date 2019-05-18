@@ -209,7 +209,7 @@ impl Request {
             wb: BytesMut::new(),
             read_delim: Delim::Http,
             write_delim: Delim::Http,
-            read_timeout: Duration::from_secs(5),
+            read_timeout: Duration::from_secs(1),
             read_since: None,
             parse_plain_metohd: false,
         }

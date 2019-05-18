@@ -90,7 +90,7 @@ impl Origin {
             wb: BytesMut::new(),
             read_delim: Delim::Dytp,
             write_delim: Delim::Dytp,
-            read_timeout: Duration::from_secs(5),
+            read_timeout: Duration::from_secs(1),
             read_since: None,
         }
     }
