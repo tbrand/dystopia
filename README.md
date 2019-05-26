@@ -22,15 +22,6 @@
 
 Dystopia aims to realize anonymity on the internet world by a transparent way.
 It implements onion routing with original protocols inspired by [Tor](https://www.torproject.org/).
-You can quickly enter the anonymous internet by the below.
-
-**The gatway sometimes be down since there are many attacks currently. We struggle to solve it now. You could construct the Dystopia's network easily. See [here](https://github.com/tbrand/dystopia/wiki/Getting-Started) for details.**
-
-```bash
-curl https://google.com -x 54.95.171.65:2888 -L
-```
-
-The curl execution through our public Dystopia's nodes. Nobody knows the exact route except the public gateway.
 
 <i>Dystopia is on super super super early stage. Any feedbacks or contributions are very welcome!</i>
 
@@ -44,7 +35,6 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 - [Component: Node](https://github.com/tbrand/dystopia/wiki/Component:-Node)
 - [Component: Cloud](https://github.com/tbrand/dystopia/wiki/Component:-Cloud)
 - [Fault Tolerant](https://github.com/tbrand/dystopia/wiki/Fault-Tolerant)
-- [Joining to our public cloud](https://github.com/tbrand/dystopia/wiki/Joining-to-our-public-cloud)
 
 ### For Developers
 - [Getting Started](https://github.com/tbrand/dystopia/wiki/Getting-Started)
@@ -53,5 +43,4 @@ The curl execution through our public Dystopia's nodes. Nobody knows the exact r
 - [Testing](https://github.com/tbrand/dystopia/wiki/Testing)
 
 ## Appreciate your contributions!
-- We need more nodes to acquire anonymity. Please [Joining to our public cloud](https://github.com/tbrand/dystopia/wiki/Joining-to-our-public-cloud) if you have any idle computing resources.
 - We need to implemenet more to make the protduct robust and fast. Send pull requests or opening issues when you have proposals.
